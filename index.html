@@ -1932,6 +1932,7 @@
     const firebaseConfig = {
   apiKey: "AIzaSyANqwlZS5gWZPoTXkP10w9aLnTlI9N7zhg",
   authDomain: "scout-monopoly.firebaseapp.com",
+  databaseURL: "https://scout-monopoly-default-rtdb.firebaseio.com",
   projectId: "scout-monopoly",
   storageBucket: "scout-monopoly.firebasestorage.app",
   messagingSenderId: "614719165054",
@@ -2207,7 +2208,52 @@
       const trimmed = String(name || "").trim();
       return trimmed || fallback;
     }
+function getRoomPlayerStorageKey(roomCode) {
+  return `scoutMonopolyPlayerId_${roomCode}`;
+}
 
+function getRoomRoleStorageKey(roomCode) {
+  return `scoutMonopolyRole_${roomCode}`;
+}
+
+function makeStudentPlayerData({ playerId, name, color, roomData, existingPlayer = null, joinOrder = 0 }) {
+  const gradeKey = roomData.gradeKey || "3rd Grade";
+  const startingWallet = GRADE_RULES[gradeKey]?.startingWallet || 150;
+  const now = Date.now();
+
+  if (existingPlayer) {
+    return {
+      ...existingPlayer,
+      id: playerId,
+      name: existingPlayer.name || name || "Scout",
+      color: existingPlayer.color || color || "#1982c4",
+      role: "student",
+      isConnected: true,
+      lastSeen: now
+    };
+  }
+
+  return {
+    id: playerId,
+    name: name || "Scout",
+    color: color || "#1982c4",
+    role: "student",
+    joinOrder,
+    tile: 0,
+    wallet: startingWallet,
+    savings: 0,
+    givingBadges: 0,
+    serviceBadges: 0,
+    freeFunCards: 0,
+    smartSaverBadges: 0,
+    nextBuyDiscount: 0,
+    skippedWant: false,
+    turnsTaken: 0,
+    isConnected: true,
+    joinedAt: now,
+    lastSeen: now
+  };
+}
     function sanitizeRoomCode(value) {
       return String(value || "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
     }
@@ -4087,169 +4133,189 @@
     }
 
     async function joinRoom(options = {}) {
-      session.authBusy = true;
-      render();
-      try {
-        const api = await loadFirebaseSdk();
-        const roomCode = sanitizeRoomCode(options.roomCode || refs.joinRoomCodeInput.value);
-        if (!roomCode) {
-          throw new Error("Enter a room code first.");
-        }
-        console.log("Joining room", roomCode);
-        const roomRef = api.ref(api.database, "scoutMonopolyRooms/" + roomCode);
-        const snapshot = await api.get(roomRef);
-        if (!snapshot.exists()) {
-          throw new Error("That room code was not found.");
-        }
-        console.log("Room exists", roomCode);
-        const currentRoom = normalizeRoomData(snapshot.val());
-        console.log("Existing player count", currentRoom.players.length);
-        let finalRole = options.role === "teacher" ? "teacher" : "student";
-        let finalPlayerId = options.playerId || generateId("player");
-        const explicitViewerJoin = options.role === "viewer";
-        const joinTimestamp = Date.now();
-        const joinName = sanitizeName(options.playerName || refs.joinPlayerNameInput.value, "Scout");
-        const requestedColor = options.color || refs.joinPlayerColorInput.value;
-        session.viewerReason = "";
-        if (options.role === "teacher") {
-          session.roomRef = roomRef;
-          session.mode = "remote";
-          session.role = "teacher";
-          session.roomCode = roomCode;
-          session.playerId = "";
-          session.viewerReason = "";
-          session.startGuardLogKey = "";
-          session.teacherName = options.teacherName || currentRoom.teacherName;
-          session.teacherPin = options.teacherPin || currentRoom.teacherPin;
-          session.connectionLabel = "Connecting";
-          saveStoredSession();
-          await listenToRoom(roomCode);
-          return;
-        }
+  session.authBusy = true;
+  render();
 
-        const existingIndex = currentRoom.players.findIndex((player) => player.id === finalPlayerId);
-        if (explicitViewerJoin) {
-          finalRole = "viewer";
-          session.viewerReason = "explicit";
-        } else if (existingIndex >= 0) {
-          console.log("Reconnected student player", finalPlayerId);
-          await api.runTransaction(roomRef, (rawRoom) => {
-            if (!rawRoom) {
-              return;
-            }
-            const draft = normalizeRoomData(rawRoom);
-            const playerIndex = draft.players.findIndex((player) => player.id === finalPlayerId);
-            if (playerIndex < 0) {
-              return rawRoom;
-            }
-            draft.players[playerIndex] = normalizePlayer({
-              ...draft.players[playerIndex],
-              role: "student",
-              isConnected: true,
-              joinedAt: draft.players[playerIndex].joinedAt || joinTimestamp,
-              lastSeen: joinTimestamp
-            }, playerIndex, draft.gradeKey);
-            return serializeRoomState(draft);
-          });
-        } else if (currentRoom.players.length >= 8) {
-          finalRole = "viewer";
-          finalPlayerId = "";
-          session.viewerReason = "full";
-          console.log("Joined as viewer: room full");
-        } else {
-          console.log("Creating student player", finalPlayerId);
-          await api.runTransaction(roomRef, (rawRoom) => {
-            if (!rawRoom) {
-              return;
-            }
-            const draft = normalizeRoomData(rawRoom);
-            if (draft.players.find((player) => player.id === finalPlayerId)) {
-              return serializeRoomState(draft);
-            }
-            if (draft.players.length >= 8) {
-              return rawRoom;
-            }
-            const studentPlayer = makePlayer({
-              id: finalPlayerId,
-              joinOrder: draft.players.length,
-              name: joinName,
-              color: pickAvailableColor(draft.players, requestedColor),
-              role: "student",
-              tile: 0,
-              wallet: GRADE_RULES[draft.gradeKey].startingWallet,
-              savings: 0,
-              givingBadges: 0,
-              serviceBadges: 0,
-              freeFunCards: 0,
-              smartSaverBadges: 0,
-              nextBuyDiscount: 0,
-              skippedWant: false,
-              turnsTaken: 0,
-              isConnected: true,
-              joinedAt: joinTimestamp,
-              lastSeen: joinTimestamp
-            }, draft.gradeKey);
-            draft.players.push(studentPlayer);
-            setStatus(draft, studentPlayer.name + " joined room " + draft.roomCode + ".", { type: "join", playerId: studentPlayer.id });
-            return serializeRoomState(draft);
-          });
-          const latestSnapshot = await api.get(roomRef);
-          if (!latestSnapshot.exists()) {
-            throw new Error("The room disappeared before you could finish joining.");
-          }
-          const latestRoom = normalizeRoomData(latestSnapshot.val());
-          if (!latestRoom.players.some((player) => player.id === finalPlayerId)) {
-            if (latestRoom.players.length >= 8) {
-              session.viewerReason = "full";
-              console.log("Joined as viewer: room full");
-              finalRole = "viewer";
-              finalPlayerId = "";
-            } else {
-              throw new Error("Could not register this student in the room. Please try joining again.");
-            }
-          }
-        }
+  try {
+    const api = await loadFirebaseSdk();
+    const roomCode = sanitizeRoomCode(options.roomCode || refs.joinRoomCodeInput.value);
 
-        if (finalRole === "student") {
-          const latestSnapshot = await api.get(roomRef);
-          if (!latestSnapshot.exists()) {
-            throw new Error("The room disappeared before you could finish joining.");
-          }
-          const latestRoom = normalizeRoomData(latestSnapshot.val());
-          if (!latestRoom.players.some((player) => player.id === finalPlayerId)) {
-            if (latestRoom.players.length >= 8) {
-              session.viewerReason = "full";
-              console.log("Joined as viewer: room full");
-              finalRole = "viewer";
-              finalPlayerId = "";
-            } else {
-              throw new Error("Could not reconnect this student in the room. Please try joining again.");
-            }
-          }
-        }
-
-        session.roomRef = roomRef;
-        session.mode = "remote";
-        session.role = finalRole;
-        session.roomCode = roomCode;
-        session.playerId = finalRole === "student" ? finalPlayerId : "";
-        session.startGuardLogKey = "";
-        session.connectionLabel = "Connecting";
-        saveStoredSession();
-        await listenToRoom(roomCode);
-        if (finalRole === "student") {
-          await updatePlayer(session.playerId, { role: "student", isConnected: true, lastSeen: Date.now() });
-          startPresenceHeartbeat();
-        } else if (session.viewerReason === "full") {
-          setFirebaseStatus("Player spots are full, so you joined as a viewer.", "info");
-        }
-      } catch (error) {
-        setFirebaseStatus(error.message || "Could not join that room.", "error");
-      } finally {
-        session.authBusy = false;
-        render();
-      }
+    if (!roomCode) {
+      throw new Error("Enter a room code first.");
     }
+
+    console.log("Join requested", roomCode);
+
+    const roomRef = api.ref(api.database, "scoutMonopolyRooms/" + roomCode);
+    const snapshot = await api.get(roomRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("That room code was not found.");
+    }
+
+    const rawRoomData = snapshot.val();
+    const currentRoom = normalizeRoomData(rawRoomData);
+
+    console.log("Room found", rawRoomData);
+    console.log("Existing players", rawRoomData.players || {});
+    console.log("Player count", currentRoom.players.length);
+
+    if (options.role === "teacher") {
+      session.roomRef = roomRef;
+      session.mode = "remote";
+      session.role = "teacher";
+      session.roomCode = roomCode;
+      session.playerId = "";
+      session.viewerReason = "";
+      session.startGuardLogKey = "";
+      session.teacherName = options.teacherName || currentRoom.teacherName;
+      session.teacherPin = options.teacherPin || currentRoom.teacherPin;
+      session.connectionLabel = "Connecting";
+
+      saveStoredSession();
+      await listenToRoom(roomCode);
+      return;
+    }
+
+    const explicitViewerJoin = options.role === "viewer";
+
+    if (explicitViewerJoin) {
+      session.roomRef = roomRef;
+      session.mode = "remote";
+      session.role = "viewer";
+      session.roomCode = roomCode;
+      session.playerId = "";
+      session.viewerReason = "explicit";
+      session.startGuardLogKey = "";
+      session.connectionLabel = "Connecting";
+
+      saveStoredSession();
+      await listenToRoom(roomCode);
+      return;
+    }
+
+    const storedPlayerId =
+      options.playerId ||
+      window.localStorage.getItem(getRoomPlayerStorageKey(roomCode));
+
+    const playerId = storedPlayerId || generateId("player");
+    const joinName = sanitizeName(options.playerName || refs.joinPlayerNameInput.value, "Scout");
+    const requestedColor = options.color || refs.joinPlayerColorInput.value || "#1982c4";
+
+    const playersObject = rawRoomData.players || {};
+    const playerIds = Object.keys(playersObject);
+    const playerCount = playerIds.length;
+
+    if (playerCount >= 8 && !playersObject[playerId]) {
+      console.log("Joined as viewer: room full");
+
+      session.roomRef = roomRef;
+      session.mode = "remote";
+      session.role = "viewer";
+      session.roomCode = roomCode;
+      session.playerId = "";
+      session.viewerReason = "full";
+      session.startGuardLogKey = "";
+      session.connectionLabel = "Connecting";
+
+      saveStoredSession();
+      await listenToRoom(roomCode);
+      setFirebaseStatus("Player spots are full, so you joined as a viewer.", "info");
+      return;
+    }
+
+    const existingPlayer = playersObject[playerId] || null;
+    const safeColor = existingPlayer
+      ? existingPlayer.color
+      : pickAvailableColor(currentRoom.players, requestedColor);
+
+    const playerData = makeStudentPlayerData({
+      playerId,
+      name: joinName,
+      color: safeColor,
+      roomData: rawRoomData,
+      existingPlayer,
+      joinOrder: playerCount
+    });
+
+    console.log("Writing student player", playerId, playerData);
+
+    const playerRef = api.ref(
+      api.database,
+      "scoutMonopolyRooms/" + roomCode + "/players/" + playerId
+    );
+
+    await api.set(playerRef, playerData);
+
+    const verifySnap = await api.get(playerRef);
+
+    if (!verifySnap.exists()) {
+      throw new Error("Player write verification failed.");
+    }
+
+    console.log("Student player write success", playerId);
+
+    const playerOrderRef = api.ref(
+      api.database,
+      "scoutMonopolyRooms/" + roomCode + "/playerOrder"
+    );
+
+    const orderSnap = await api.get(playerOrderRef);
+    const existingOrder = orderSnap.exists() && Array.isArray(orderSnap.val())
+      ? orderSnap.val()
+      : [];
+
+    if (!existingOrder.includes(playerId)) {
+      await api.set(playerOrderRef, existingOrder.concat(playerId));
+    }
+
+    const roomUpdates = {
+      updatedAt: Date.now(),
+      statusMessage: joinName + " joined room " + roomCode + "."
+    };
+
+    await api.update(roomRef, roomUpdates);
+
+    window.localStorage.setItem(getRoomPlayerStorageKey(roomCode), playerId);
+    window.localStorage.setItem(getRoomRoleStorageKey(roomCode), "student");
+
+    session.roomRef = roomRef;
+    session.mode = "remote";
+    session.role = "student";
+    session.roomCode = roomCode;
+    session.playerId = playerId;
+    session.viewerReason = "";
+    session.startGuardLogKey = "";
+    session.connectionLabel = "Connecting";
+
+    saveStoredSession();
+    await listenToRoom(roomCode);
+
+    try {
+      await updatePlayer(session.playerId, {
+        role: "student",
+        isConnected: true,
+        lastSeen: Date.now()
+      });
+
+      startPresenceHeartbeat();
+    } catch (presenceError) {
+      console.warn("Presence update failed, but student joined.", presenceError);
+    }
+
+    setFirebaseStatus("Joined " + roomCode + " as Student.", "info");
+    setActiveTab("players");
+  } catch (error) {
+    console.error("Student player write failed", error);
+    setFirebaseStatus(
+      "Could not register this student: " + (error.code ? error.code + ": " : "") + error.message,
+      "error"
+    );
+  } finally {
+    session.authBusy = false;
+    render();
+  }
+}
 
     async function listenToRoom(roomCode) {
       const api = await loadFirebaseSdk();
