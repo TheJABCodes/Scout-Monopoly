@@ -1,0 +1,4871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scout Monopoly: Scout Budget Game</title>
+  <style>
+    :root {
+      --paper: #f4e8ce;
+      --pine: #1f6b37;
+      --forest: #184d2f;
+      --navy: #1b3a5c;
+      --gold: #f5a623;
+      --forest-strong: #2d6a4f;
+      --cream: #fff7e6;
+      --allowance: #2f9138;
+      --buy: #cf2929;
+      --chore: #f3a51f;
+      --bank: #24589c;
+      --need: #4f3e98;
+      --giving: #8d3ec2;
+      --sell: #1a7f7a;
+      --surprise: #ff7a18;
+      --ink: #1b1b1b;
+      --card: rgba(255, 248, 236, 0.95);
+      --shadow: 0 24px 60px rgba(13, 34, 21, 0.24);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Avenir Next", "Gill Sans", sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(255, 234, 174, 0.9), transparent 34%),
+        linear-gradient(180deg, #7ab35f 0%, #4b8f43 24%, #285c37 100%);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .page-shell {
+      max-width: 1680px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+
+    .page-header {
+      margin-bottom: 18px;
+      padding: 22px 26px;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(255, 247, 220, 0.95), rgba(240, 226, 182, 0.92));
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--forest);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .page-header h1 {
+      margin: 0;
+      font-family: "Copperplate", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1;
+    }
+
+    .page-header p {
+      max-width: 78ch;
+      margin: 12px 0 0;
+      font-size: 1.06rem;
+      line-height: 1.45;
+    }
+
+    .top-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: grid;
+      gap: 14px;
+      margin-bottom: 18px;
+      padding: 16px 18px;
+      border-radius: var(--radius);
+      background: rgba(255, 247, 230, 0.92);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .tab-nav,
+    .toolbar-actions,
+    .section-action-row,
+    .deck-actions,
+    .history-actions,
+    .quick-edit-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .toolbar-actions {
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toolbar-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .tab-button,
+    .mode-chip {
+      min-height: 48px;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      transition: transform 140ms ease, background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+    }
+
+    .tab-button {
+      color: #fff;
+      background: linear-gradient(135deg, var(--navy), #274d79);
+      box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    .tab-button:hover,
+    .mode-chip:hover {
+      transform: translateY(-1px);
+    }
+
+    .tab-button.is-active {
+      color: #1d1d1d;
+      background: linear-gradient(135deg, var(--gold), #ffd36c);
+      box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.22);
+    }
+
+    .mode-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: #f7f4eb;
+      background: linear-gradient(135deg, var(--forest-strong), #3b8b68);
+    }
+
+    .mode-chip input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--gold);
+    }
+
+    .tab-shell {
+      display: grid;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.is-active {
+      display: block;
+    }
+
+    .room-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        linear-gradient(135deg, rgba(27, 95, 45, 0.94), rgba(72, 131, 60, 0.92)),
+        radial-gradient(circle at top, rgba(255, 227, 130, 0.18), transparent 42%);
+      overflow: auto;
+    }
+
+    .room-gate.is-hidden {
+      display: none;
+    }
+
+    .room-gate__shell {
+      width: min(1120px, 100%);
+      display: grid;
+      gap: 18px;
+    }
+
+    .room-gate__hero,
+    .room-gate__status,
+    .room-banner {
+      border-radius: 24px;
+      border: 1px solid rgba(40, 75, 50, 0.08);
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.93), rgba(248, 240, 212, 0.95)),
+        radial-gradient(circle at top, rgba(255, 213, 79, 0.18), transparent 45%);
+      box-shadow: 0 22px 60px rgba(19, 49, 22, 0.22);
+    }
+
+    .room-gate__hero,
+    .room-gate__status {
+      padding: 22px 24px;
+    }
+
+    .room-gate__status {
+      color: var(--forest-strong);
+      font-weight: 700;
+    }
+
+    .room-gate__status.is-warning {
+      color: #8a5a00;
+    }
+
+    .room-gate__status.is-error {
+      color: #8f1d1d;
+    }
+
+    .room-gate__grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .room-auth-card {
+      display: grid;
+      gap: 14px;
+    }
+
+    .room-gate__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .room-banner {
+      margin-bottom: 18px;
+      padding: 18px 20px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .room-banner.is-hidden {
+      display: none;
+    }
+
+    .room-banner__summary,
+    .room-banner__actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .room-banner__link-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: end;
+    }
+
+    .room-banner__link-copy {
+      display: grid;
+      gap: 8px;
+    }
+
+    .room-banner__link-copy input {
+      width: 100%;
+    }
+
+    .board-tab-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(320px, 420px);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .board-panel--hero {
+      padding: 18px;
+    }
+
+    .board-sidebar,
+    .panel-stack,
+    .deck-grid,
+    .history-list,
+    .reflection-grid,
+    .rules-grid,
+    .tile-guide-grid,
+    .summary-list,
+    .board-history-preview {
+      display: grid;
+      gap: 16px;
+    }
+
+    .tab-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .tab-grid--two {
+      grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+      align-items: start;
+    }
+
+    .panel-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.08rem;
+      color: var(--navy);
+    }
+
+    .helper-copy {
+      margin: 0;
+      color: #466257;
+      line-height: 1.45;
+    }
+
+    .checklist {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding-left: 20px;
+      line-height: 1.45;
+    }
+
+    .compact-summary {
+      display: grid;
+      gap: 12px;
+    }
+
+    .summary-grid--turn {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .rules-list {
+      display: grid;
+      gap: 10px;
+      padding-left: 20px;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .tile-guide-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tile-guide-card,
+    .deck-card,
+    .history-item,
+    .reflection-card,
+    .summary-card,
+    .note-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(27, 27, 27, 0.08);
+    }
+
+    .tile-guide-card strong,
+    .deck-card strong,
+    .summary-card strong,
+    .reflection-card strong,
+    .note-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--navy);
+      font-size: 1rem;
+    }
+
+    .deck-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .deck-card h3,
+    .summary-card h3,
+    .reflection-card h3 {
+      margin: 0 0 8px;
+      font-size: 1.08rem;
+    }
+
+    .deck-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .teacher-tools-shell[data-teacher-visible="false"] .teacher-mode-only {
+      display: none;
+    }
+
+    .teacher-visibility-note {
+      margin: 0 0 14px;
+      color: #4b5e57;
+      line-height: 1.45;
+    }
+
+    .history-list {
+      max-height: 560px;
+      overflow: auto;
+    }
+
+    .history-item {
+      gap: 8px;
+    }
+
+    .history-item span {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #617469;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .history-empty {
+      padding: 22px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.68);
+      color: #5d7067;
+      text-align: center;
+    }
+
+    .fill-prompt {
+      display: grid;
+      gap: 8px;
+    }
+
+    .fill-prompt textarea {
+      width: 100%;
+      min-height: 92px;
+      border-radius: 14px;
+      border: 1px solid rgba(47, 91, 58, 0.22);
+      padding: 12px;
+      resize: vertical;
+      background: rgba(255, 255, 255, 0.86);
+      font: inherit;
+    }
+
+    .note-card {
+      background: linear-gradient(135deg, rgba(245, 166, 35, 0.18), rgba(45, 106, 79, 0.15));
+    }
+
+    .quick-edit-row .teacher-action {
+      flex: 1 1 120px;
+      min-height: 44px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+    }
+
+    .board-quick-status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .board-quick-status .badge {
+      background: rgba(27, 58, 92, 0.08);
+    }
+
+    .teacher-status-banner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .board-preview-actions {
+      margin-top: 12px;
+    }
+
+    .classroom-mode .page-header p,
+    .classroom-mode .classroom-hide,
+    .classroom-mode .editing-only,
+    .classroom-mode [data-tab]:not([data-tab="board"]),
+    .classroom-mode [data-tab-panel]:not([data-tab-panel="board"]) {
+      display: none !important;
+    }
+
+    .classroom-mode .board-tab-layout {
+      grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
+    }
+
+    .classroom-mode .top-toolbar {
+      gap: 10px;
+    }
+
+    .classroom-mode .board-panel--hero {
+      padding: 12px;
+    }
+
+    .classroom-mode .button,
+    .classroom-mode .tab-button,
+    .classroom-mode .teacher-action,
+    .classroom-mode .choice-button,
+    .classroom-mode .modal-actions button {
+      min-height: 64px;
+      font-size: 1.06rem;
+    }
+
+    .classroom-mode .modal-shell {
+      width: min(980px, 100%);
+      padding: 28px;
+    }
+
+    .layout-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(330px, 430px);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .board-panel,
+    .panel-card {
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .board-panel {
+      padding: 18px;
+    }
+
+    .board-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border-radius: 18px;
+      background: #ece2c9;
+    }
+
+    .board-image {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .board-overlay,
+    .token-layer {
+      position: absolute;
+      inset: 0;
+    }
+
+    .tile-zone {
+      position: absolute;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      border-radius: 14px;
+      outline: 0;
+      transition: box-shadow 180ms ease, background-color 180ms ease, transform 180ms ease;
+    }
+
+    .tile-zone:hover,
+    .tile-zone:focus-visible {
+      box-shadow: 0 0 0 4px rgba(255, 246, 103, 0.92);
+    }
+
+    .tile-zone.current {
+      box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.98), inset 0 0 0 4px rgba(31, 31, 31, 0.62);
+    }
+
+    .tile-zone.inspected {
+      box-shadow: 0 0 0 4px rgba(255, 166, 0, 0.96), inset 0 0 0 3px rgba(31, 31, 31, 0.4);
+    }
+
+    .debug-zones .tile-zone {
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 0 2px rgba(44, 44, 44, 0.45);
+    }
+
+    .tile-zone__label {
+      position: absolute;
+      inset: auto 8px 8px auto;
+      display: none;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(25, 25, 25, 0.78);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .debug-zones .tile-zone__label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .token {
+      position: absolute;
+      width: clamp(16px, 1.35vw, 24px);
+      height: clamp(16px, 1.35vw, 24px);
+      border-radius: 999px;
+      border: 3px solid #ffffff;
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.25);
+      transform: translate(-50%, -50%);
+      z-index: 3;
+    }
+
+    .token::after {
+      content: attr(data-name);
+      position: absolute;
+      top: 110%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(31, 31, 31, 0.78);
+      color: #fff;
+      font-size: 0.64rem;
+      font-weight: 700;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease;
+    }
+
+    .token:hover::after {
+      opacity: 1;
+    }
+
+    .board-caption {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .status-strip,
+    .tile-strip {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(29, 64, 41, 0.12);
+      line-height: 1.4;
+    }
+
+    .status-strip strong,
+    .tile-strip strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--forest);
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .control-panel {
+      display: grid;
+      gap: 16px;
+    }
+
+    .panel-card {
+      padding: 18px;
+    }
+
+    .panel-card h2,
+    .teacher-tools summary {
+      margin: 0 0 14px;
+      font-family: "Copperplate", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+      font-size: 1.35rem;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .button,
+    .modal-actions button,
+    .choice-button,
+    .teacher-action {
+      min-height: 52px;
+      border: 0;
+      border-radius: 16px;
+      padding: 12px 16px;
+      font-weight: 800;
+      transition: transform 140ms ease, filter 140ms ease, opacity 140ms ease;
+    }
+
+    .button:hover,
+    .modal-actions button:hover,
+    .choice-button:hover,
+    .teacher-action:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+    }
+
+    .button:disabled,
+    .modal-actions button:disabled,
+    .choice-button:disabled,
+    .teacher-action:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      filter: none;
+    }
+
+    .button-primary {
+      color: #fffef8;
+      background: linear-gradient(135deg, #2469b0, #164d84);
+    }
+
+    .button-secondary {
+      color: #1c1c1c;
+      background: linear-gradient(135deg, #f5df8b, #e8bd36);
+    }
+
+    .button-neutral {
+      color: #162a1d;
+      background: linear-gradient(135deg, #d4ecd2, #9fd095);
+    }
+
+    .button-danger {
+      color: #fffef8;
+      background: linear-gradient(135deg, #d85454, #aa2121);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .summary-stat {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(27, 27, 27, 0.08);
+    }
+
+    .summary-stat span {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #406050;
+    }
+
+    .summary-stat strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 1.12rem;
+    }
+
+    .setup-grid,
+    .teacher-grid,
+    .teacher-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .setup-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #355640;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 46px;
+      border-radius: 14px;
+      border: 1px solid rgba(47, 91, 58, 0.22);
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .field input[type="color"] {
+      padding: 4px;
+      min-height: 46px;
+    }
+
+    .toggle-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      font-weight: 700;
+    }
+
+    .setup-note,
+    .tiny-note {
+      margin: 10px 0 0;
+      font-size: 0.88rem;
+      color: #4c6254;
+      line-height: 1.4;
+    }
+
+    .setup-players,
+    .player-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .setup-player-row,
+    .player-card {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(27, 27, 27, 0.08);
+    }
+
+    .setup-player-row {
+      grid-template-columns: minmax(0, 1fr) 92px;
+      align-items: end;
+    }
+
+    .player-card.current {
+      border-color: rgba(36, 105, 176, 0.5);
+      box-shadow: inset 0 0 0 2px rgba(36, 105, 176, 0.18);
+    }
+
+    .player-card-header,
+    .current-player-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .player-title,
+    .current-player-header strong {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.02rem;
+    }
+
+    .color-chip {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+      flex: 0 0 auto;
+    }
+
+    .badge-row,
+    .legend-row,
+    .player-metrics,
+    .choice-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge,
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      background: rgba(35, 35, 35, 0.08);
+    }
+
+    .metric {
+      flex: 1 1 110px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .metric span {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #4d6357;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 1rem;
+    }
+
+    .teacher-tools {
+      overflow: hidden;
+    }
+
+    .teacher-tools summary {
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .teacher-tools summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .teacher-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 6px;
+    }
+
+    .teacher-stack {
+      margin-top: 12px;
+    }
+
+    .teacher-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .teacher-action {
+      color: #1c1c1c;
+      background: linear-gradient(135deg, #f1ead0, #e1d0a4);
+    }
+
+    .teacher-action.emphasis {
+      color: #fffef8;
+      background: linear-gradient(135deg, #2469b0, #174a7f);
+    }
+
+    .teacher-action.alert {
+      color: #fffef8;
+      background: linear-gradient(135deg, #cf5252, #932222);
+    }
+
+    .current-player-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .progress-track {
+      overflow: hidden;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(34, 34, 34, 0.1);
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #f8cb45, #f08b1f);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(13, 21, 18, 0.68);
+      z-index: 999;
+    }
+
+    .modal-backdrop.is-hidden {
+      display: none;
+    }
+
+    .modal-shell {
+      width: min(860px, 100%);
+      max-height: min(92vh, 980px);
+      overflow: auto;
+      border-radius: 28px;
+      padding: 22px;
+      background: linear-gradient(180deg, rgba(255, 252, 243, 0.98), rgba(248, 241, 222, 0.98));
+      box-shadow: 0 34px 80px rgba(0, 0, 0, 0.32);
+      border-top: 12px solid var(--allowance);
+    }
+
+    .modal-shell[data-deck="allowance"] { border-top-color: var(--allowance); }
+    .modal-shell[data-deck="chore"] { border-top-color: var(--chore); }
+    .modal-shell[data-deck="bank"] { border-top-color: var(--bank); }
+    .modal-shell[data-deck="need"] { border-top-color: var(--need); }
+    .modal-shell[data-deck="buy"] { border-top-color: var(--buy); }
+    .modal-shell[data-deck="giving"] { border-top-color: var(--giving); }
+    .modal-shell[data-deck="sell"] { border-top-color: var(--sell); }
+    .modal-shell[data-deck="surprise"] { border-top-color: var(--surprise); }
+    .modal-shell[data-deck="help"] { border-top-color: var(--navy); }
+    .modal-shell[data-deck="winner"] { border-top-color: #2b8f43; }
+
+    .modal-topline {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .modal-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: var(--allowance);
+    }
+
+    .modal-tag[data-deck="allowance"] { background: var(--allowance); }
+    .modal-tag[data-deck="chore"] { background: var(--chore); color: #231a08; }
+    .modal-tag[data-deck="bank"] { background: var(--bank); }
+    .modal-tag[data-deck="need"] { background: var(--need); }
+    .modal-tag[data-deck="buy"] { background: var(--buy); }
+    .modal-tag[data-deck="giving"] { background: var(--giving); }
+    .modal-tag[data-deck="sell"] { background: var(--sell); }
+    .modal-tag[data-deck="surprise"] { background: var(--surprise); }
+    .modal-tag[data-deck="help"] { background: var(--navy); }
+    .modal-tag[data-deck="winner"] { background: var(--pine); }
+
+    .modal-close {
+      min-height: 42px;
+      border: 0;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight: 800;
+      background: rgba(34, 34, 34, 0.08);
+    }
+
+    .modal-shell h3 {
+      margin: 16px 0 10px;
+      font-size: clamp(1.6rem, 2.8vw, 2.3rem);
+      line-height: 1.05;
+    }
+
+    .modal-meta,
+    .modal-actions,
+    .choice-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .modal-prompt {
+      margin: 16px 0;
+      font-size: 1.06rem;
+      line-height: 1.5;
+    }
+
+    .modal-body {
+      display: grid;
+      gap: 14px;
+    }
+
+    .modal-actions {
+      margin-top: 18px;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .choice-card {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(27, 27, 27, 0.08);
+    }
+
+    .choice-card h4 {
+      margin: 0;
+      font-size: 1.12rem;
+    }
+
+    .choice-card p,
+    .choice-card .tiny-note {
+      margin: 0;
+    }
+
+    .choice-button {
+      width: 100%;
+      color: #fffef8;
+      background: linear-gradient(135deg, #c73838, #8f1717);
+    }
+
+    .choice-button.secondary {
+      color: #142414;
+      background: linear-gradient(135deg, #e8f1d7, #c0df9e);
+    }
+
+    .modal-bank-box,
+    .modal-payment-box {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(27, 27, 27, 0.08);
+    }
+
+    .bank-helper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .winner-glow {
+      padding: 18px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(255, 232, 134, 0.58), rgba(133, 199, 110, 0.42));
+      border: 1px solid rgba(31, 107, 55, 0.2);
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 1180px) {
+      .layout-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .room-gate__grid,
+      .room-banner__link-row {
+        grid-template-columns: 1fr;
+      }
+
+      .board-tab-layout,
+      .tab-grid--two {
+        grid-template-columns: 1fr;
+      }
+
+      .control-panel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .room-gate {
+        padding: 14px;
+      }
+
+      .page-shell {
+        padding: 18px 12px 24px;
+      }
+
+      .top-toolbar,
+      .toolbar-actions {
+        align-items: stretch;
+      }
+
+      .toolbar-actions {
+        flex-direction: column;
+      }
+
+      .room-gate__footer,
+      .room-banner__summary,
+      .room-banner__actions {
+        align-items: stretch;
+      }
+
+      .control-panel,
+      .summary-grid,
+      .setup-grid,
+      .teacher-grid,
+      .teacher-actions,
+      .choice-grid,
+      .button-row,
+      .tile-guide-grid,
+      .deck-grid,
+      .summary-grid--turn {
+        grid-template-columns: 1fr;
+      }
+
+      .setup-player-row {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-shell {
+        padding: 18px;
+      }
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+      }
+
+      .top-toolbar,
+      .page-header,
+      .board-sidebar,
+      .board-caption,
+      .board-overlay,
+      .token-layer,
+      .tab-panel:not([data-tab-panel="board"]) {
+        display: none !important;
+      }
+
+      .page-shell,
+      .board-panel {
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        background: transparent;
+      }
+
+      .board-wrap {
+        border-radius: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="room-gate" id="roomGate">
+    <div class="room-gate__shell">
+      <div class="room-gate__hero">
+        <p class="eyebrow">Live Classroom Multiplayer</p>
+        <h2>Scout Monopoly Rooms</h2>
+        <p>Keep the same board, the same cards, and the same money lessons, but let one teacher host and many students join the same shared game from separate devices.</p>
+      </div>
+
+      <div class="room-gate__status" id="firebaseStatusBanner">
+        Firebase status will appear here. Local Practice Mode stays available even if Firebase is not ready yet.
+      </div>
+
+      <div class="room-gate__grid">
+        <section class="panel-card room-auth-card">
+          <h3>Create Teacher Room</h3>
+          <p class="helper-copy">Create a room, copy the student link, and run the class game as the host controller.</p>
+          <div class="field">
+            <label for="teacherNameInput">Teacher Name</label>
+            <input id="teacherNameInput" type="text" placeholder="Ms. Lopez">
+          </div>
+          <div class="field">
+            <label for="teacherPinInput">Teacher PIN</label>
+            <input id="teacherPinInput" type="text" inputmode="numeric" maxlength="6" placeholder="4 digits or leave blank">
+          </div>
+          <div class="button-row">
+            <button class="button button-primary" id="createTeacherRoomBtn" type="button">Create Teacher Room</button>
+          </div>
+        </section>
+
+        <section class="panel-card room-auth-card">
+          <h3>Join Game Room</h3>
+          <p class="helper-copy">Students can join with a room code or a shared link. If the room already has 8 players, they join as a viewer.</p>
+          <div class="field">
+            <label for="joinRoomCodeInput">Room Code</label>
+            <input id="joinRoomCodeInput" type="text" placeholder="SCOUT-739">
+          </div>
+          <div class="field">
+            <label for="joinPlayerNameInput">Student Name</label>
+            <input id="joinPlayerNameInput" type="text" placeholder="Scout 1">
+          </div>
+          <div class="field">
+            <label for="joinPlayerColorInput">Token Color</label>
+            <input id="joinPlayerColorInput" type="color" value="#ff595e">
+          </div>
+          <div class="button-row">
+            <button class="button button-secondary" id="joinGameRoomBtn" type="button">Join Game Room</button>
+          </div>
+        </section>
+      </div>
+
+      <div class="room-gate__footer">
+        <div class="note-card">
+          <strong>Local Practice Mode</strong>
+          Use the same board locally on one device when Firebase is not configured yet or when you just want to practice without syncing.
+        </div>
+        <button class="button button-neutral" id="startLocalPracticeBtn" type="button">Start Local Practice Mode</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="page-shell">
+    <header class="page-header">
+      <p class="eyebrow">Interactive Budget Board Game</p>
+      <h1>Scout Monopoly: Scout Budget Game</h1>
+      <p>The original uploaded board stays untouched as the star of the page. Every tile, token, card draw, budget choice, and teacher override rides on top of the real board image instead of replacing it.</p>
+    </header>
+
+    <section class="room-banner is-hidden" id="roomBanner">
+      <div class="room-banner__summary">
+        <span class="badge" id="bannerModeBadge">Local Practice</span>
+        <span class="badge" id="bannerRoomCode">Room Code: -</span>
+        <span class="badge" id="bannerRole">Role: Teacher</span>
+        <span class="badge" id="bannerConnection">Connection: Offline</span>
+      </div>
+      <div class="room-banner__link-row">
+        <div class="room-banner__link-copy">
+          <label for="shareLinkOutput">Share Link</label>
+          <input id="shareLinkOutput" type="text" readonly value="Local Practice Mode does not use a room link.">
+        </div>
+        <div class="room-banner__actions">
+          <button class="button button-secondary" id="copyStudentLinkBtn" type="button">Copy Student Link</button>
+          <button class="button button-neutral" id="copyRoomCodeBtn" type="button">Copy Room Code</button>
+          <button class="button button-danger" id="leaveRoomBtn" type="button">Leave Room</button>
+        </div>
+      </div>
+      <div class="tiny-note" id="roomBannerNote">Rooms only store names, colors, and game progress. No student email or login is required.</div>
+    </section>
+
+    <div class="top-toolbar">
+      <div class="tab-nav" id="tabNav">
+        <button class="tab-button is-active" type="button" data-tab="board">Game Board</button>
+        <button class="tab-button" type="button" data-tab="setup">Setup</button>
+        <button class="tab-button" type="button" data-tab="players">Players</button>
+        <button class="tab-button" type="button" data-tab="rules">Rules</button>
+        <button class="tab-button" type="button" data-tab="decks">Card Decks</button>
+        <button class="tab-button" type="button" data-tab="teacher">Teacher</button>
+        <button class="tab-button" type="button" data-tab="history">History</button>
+        <button class="tab-button" type="button" data-tab="reflection">Reflection</button>
+        <button class="tab-button" type="button" data-tab="start-end">Start / End</button>
+      </div>
+      <div class="toolbar-actions">
+        <div class="toolbar-pills">
+          <label class="mode-chip" for="teacherModeToggle">
+            <input id="teacherModeToggle" type="checkbox">
+            Teacher Mode
+          </label>
+          <label class="mode-chip" for="classroomModeToggle">
+            <input id="classroomModeToggle" type="checkbox">
+            Classroom Mode
+          </label>
+        </div>
+        <button class="button button-secondary" id="helpBtn" type="button">Quick Help</button>
+      </div>
+    </div>
+
+    <main class="tab-shell">
+      <section class="tab-panel is-active" data-tab-panel="board">
+        <div class="board-tab-layout">
+          <section class="board-panel board-panel--hero">
+            <div class="board-wrap" id="boardWrap">
+              <img src="scout-monopoly-assets/board.png" class="board-image" alt="Scout Monopoly board">
+              <div class="board-overlay" id="boardOverlay"></div>
+              <div class="token-layer" id="tokenLayer" aria-hidden="true"></div>
+            </div>
+
+            <div class="board-caption classroom-hide">
+              <div class="status-strip">
+                <strong>Game Status</strong>
+                <div id="boardStatus">Set up your scouts, then start a new game.</div>
+              </div>
+              <div class="tile-strip">
+                <strong>Tile Focus</strong>
+                <div id="tileInfo">Click a board space to inspect what happens there.</div>
+              </div>
+            </div>
+          </section>
+
+          <aside class="board-sidebar">
+            <section class="panel-card">
+              <h2>Turn Controls</h2>
+              <div class="button-row">
+                <button class="button button-secondary" id="rollDiceBtn" type="button">Roll Dice</button>
+                <button class="button button-neutral" id="endTurnBtn" type="button">End Turn</button>
+                <button class="button button-neutral classroom-hide" id="printBoardBtn" type="button">Print Board</button>
+                <button class="button button-primary classroom-hide" id="boardHelpBtn" type="button">Turn Help</button>
+              </div>
+              <div class="summary-grid summary-grid--turn">
+                <div class="summary-stat"><span>Current Player</span><strong id="summaryPlayer">Scout 1</strong></div>
+                <div class="summary-stat"><span>Dice Result</span><strong id="summaryDice">-</strong></div>
+                <div class="summary-stat"><span>Wallet</span><strong id="summaryWallet">$150</strong></div>
+                <div class="summary-stat"><span>Savings</span><strong id="summarySavings">$0</strong></div>
+                <div class="summary-stat"><span>Goal</span><strong id="summaryGoal">$800</strong></div>
+                <div class="summary-stat classroom-hide"><span>Tile</span><strong id="summaryTile">Start / Allowance</strong></div>
+              </div>
+              <div class="board-quick-status classroom-hide">
+                <span class="badge" id="summaryGrade">3rd Grade</span>
+                <span class="badge" id="teacherModeBadge">Teacher Mode Off</span>
+                <span class="badge" id="classroomModeBadge">Classroom Mode Off</span>
+              </div>
+            </section>
+
+            <section class="panel-card classroom-hide">
+              <h2>Current Player</h2>
+              <div class="current-player-card" id="currentPlayerCard"></div>
+            </section>
+
+            <section class="panel-card classroom-hide">
+              <div class="section-action-row">
+                <h2 style="margin:0;">Turn History</h2>
+                <button class="button button-neutral" type="button" data-tab-open="history">Open Full History</button>
+              </div>
+              <div class="board-history-preview" id="boardHistoryPreview"></div>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="setup">
+        <div class="tab-grid tab-grid--two">
+          <section class="panel-card">
+            <h2>Setup</h2>
+            <p class="helper-copy" id="setupModeNote">Choose the grade level, set player names and colors, then start the game.</p>
+            <div class="setup-grid">
+              <div class="field">
+                <label for="gradeSelect">Grade Level</label>
+                <select id="gradeSelect">
+                  <option value="2nd Grade">2nd Grade</option>
+                  <option value="3rd Grade" selected>3rd Grade</option>
+                  <option value="4th/5th Grade">4th/5th Grade</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="playerCountInput">Players</label>
+                <input id="playerCountInput" type="number" min="2" max="8" value="4">
+              </div>
+            </div>
+            <p class="setup-note">Update names and colors below, then press <strong>Start Game</strong>. The chosen grade controls the starting wallet and the savings goal.</p>
+            <div class="setup-players" id="setupRows"></div>
+            <div class="section-action-row" style="margin-top:16px;">
+              <button class="button button-primary" id="newGameBtn" type="button">Start Game</button>
+            </div>
+          </section>
+
+          <section class="panel-stack">
+            <section class="panel-card">
+              <h2>Setup Checklist</h2>
+              <ol class="checklist">
+                <li>Choose grade level.</li>
+                <li>Choose number of players.</li>
+                <li>Add player names.</li>
+                <li>Pick token colors.</li>
+                <li>Press Start Game.</li>
+              </ol>
+            </section>
+
+            <section class="panel-card">
+              <h2>Smartboard Tip</h2>
+              <p class="helper-copy">After setup, switch to <strong>Game Board</strong> for play, <strong>Players</strong> for progress checks, and <strong>Teacher</strong> when you need overrides.</p>
+            </section>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="players">
+        <div class="tab-grid">
+          <section class="panel-card">
+            <h2>Player Profiles</h2>
+            <p class="helper-copy">Each scout keeps a wallet for spending and savings for winning. The current player is highlighted.</p>
+            <div class="player-list" id="playerList"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="rules">
+        <div class="tab-grid tab-grid--two">
+          <section class="panel-card">
+            <h2>How to Play</h2>
+            <ol class="rules-list">
+              <li>Start every player on Start / Allowance.</li>
+              <li>Roll the die and move around the board.</li>
+              <li>Follow the space you land on.</li>
+              <li>Wallet money can be spent.</li>
+              <li>Savings money helps you win.</li>
+              <li>Only money in savings counts toward the goal.</li>
+              <li>Buy spaces let you draw 4 Buy Cards and choose one or skip all.</li>
+              <li>Bank spaces let you move wallet money into savings.</li>
+              <li>Giving is optional and positive.</li>
+              <li>The first player to reach the savings goal wins.</li>
+              <li>No loans, no debt, no bankruptcy, no rent, no jail, and no elimination.</li>
+              <li>Scouts win by saving wisely.</li>
+            </ol>
+          </section>
+
+          <section class="panel-stack">
+            <section class="panel-card">
+              <h2>Tile Guide</h2>
+              <div class="tile-guide-grid">
+                <div class="tile-guide-card"><strong>Allowance</strong>Collect money.</div>
+                <div class="tile-guide-card"><strong>Chore &amp; Job</strong>Earn money.</div>
+                <div class="tile-guide-card"><strong>Buy</strong>Draw 4 and choose.</div>
+                <div class="tile-guide-card"><strong>Need</strong>Pay for needs.</div>
+                <div class="tile-guide-card"><strong>Bank</strong>Save and manage money.</div>
+                <div class="tile-guide-card"><strong>Giving</strong>Give or help others.</div>
+                <div class="tile-guide-card"><strong>Sell</strong>Sell items or donate.</div>
+                <div class="tile-guide-card"><strong>Surprise</strong>Good or bad surprise.</div>
+              </div>
+            </section>
+
+            <section class="note-card">
+              <strong>Turn Reminder</strong>
+              Roll, move, follow the card for your space, make your choice, then end your turn.
+            </section>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="decks">
+        <div class="tab-grid">
+          <section class="panel-card">
+            <h2>Card Decks</h2>
+            <div class="tab-grid tab-grid--two">
+              <div class="field">
+                <label for="deckTargetSelect">Draw Deck For Player</label>
+                <select id="deckTargetSelect"></select>
+              </div>
+              <div class="section-action-row" style="justify-content:flex-end; align-items:end;">
+                <button class="button button-danger" id="resetAllDecksBtn" type="button">Reset All Decks</button>
+              </div>
+            </div>
+            <p class="helper-copy">Use these controls to check deck sizes, manually draw cards for lessons, and reshuffle when you want a fresh cycle.</p>
+            <div class="deck-grid" id="deckList"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="teacher">
+        <div class="tab-grid">
+          <section class="panel-card teacher-tools-shell" id="teacherToolsShell" data-teacher-visible="false">
+            <div class="teacher-status-banner">
+              <span class="badge" id="teacherModeStatusBadge">Teacher Mode Off</span>
+              <span class="badge">Alignment Mode note: use debug only to check clickable zones against the board image.</span>
+            </div>
+            <h2>Teacher Panel</h2>
+            <p class="teacher-visibility-note" id="teacherVisibilityNote">Turn on Teacher Mode to show override tools.</p>
+
+            <div class="teacher-mode-only">
+              <div class="field">
+                <label for="teacherPlayerSelect">Selected Player</label>
+                <select id="teacherPlayerSelect"></select>
+              </div>
+
+              <div class="teacher-stack">
+                <div class="teacher-grid">
+                  <div class="field">
+                    <label for="teacherWalletInput">Wallet Amount</label>
+                    <input id="teacherWalletInput" type="number" min="0" step="1">
+                  </div>
+                  <div class="field">
+                    <label for="teacherSavingsInput">Savings Amount</label>
+                    <input id="teacherSavingsInput" type="number" min="0" step="1">
+                  </div>
+                </div>
+                <div class="teacher-actions">
+                  <button class="teacher-action" id="applyWalletBtn" type="button">Edit Wallet</button>
+                  <button class="teacher-action" id="applySavingsBtn" type="button">Edit Savings</button>
+                </div>
+              </div>
+
+              <div class="teacher-stack">
+                <div class="teacher-grid">
+                  <div class="field">
+                    <label for="teacherTileSelect">Move Player To Tile</label>
+                    <select id="teacherTileSelect"></select>
+                  </div>
+                  <div class="field">
+                    <label for="teacherDeckSelect">Draw Any Deck</label>
+                    <select id="teacherDeckSelect">
+                      <option value="allowance">Allowance</option>
+                      <option value="chore">Chore &amp; Job</option>
+                      <option value="buy">Buy</option>
+                      <option value="bank">Bank</option>
+                      <option value="need">Need</option>
+                      <option value="giving">Giving</option>
+                      <option value="sell">Sell</option>
+                      <option value="surprise">Surprise</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="teacher-actions">
+                  <button class="teacher-action" id="movePlayerBtn" type="button">Move Player</button>
+                  <button class="teacher-action emphasis" id="drawDeckBtn" type="button">Draw Selected Deck</button>
+                </div>
+              </div>
+
+              <div class="teacher-stack">
+                <label class="toggle-line" for="debugToggle">
+                  <input id="debugToggle" type="checkbox">
+                  Show tile zones for alignment and teaching
+                </label>
+                <p class="tiny-note">Alignment Mode note: use this only if the clickable zones need to be checked against the board image.</p>
+              </div>
+
+              <div class="teacher-stack">
+                <div class="teacher-actions">
+                  <button class="teacher-action" id="addGivingBadgeBtn" type="button">Add Giving Badge</button>
+                  <button class="teacher-action" id="addServiceBadgeBtn" type="button">Add Service Badge</button>
+                  <button class="teacher-action alert" id="resetPlayerBtn" type="button">Reset Player</button>
+                  <button class="teacher-action alert" id="resetGameBtn" type="button">Reset Game</button>
+                  <button class="teacher-action alert" id="lockRoomBtn" type="button">End Game and Lock Room</button>
+                  <button class="teacher-action alert" id="deleteRoomBtn" type="button">Delete Room</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="history">
+        <div class="tab-grid">
+          <section class="panel-card">
+            <div class="section-action-row">
+              <div>
+                <h2 style="margin:0;">Turn History</h2>
+                <p class="helper-copy">Major actions are logged here so the class can review choices and outcomes.</p>
+              </div>
+              <button class="button button-danger" id="clearHistoryBtn" type="button">Clear History</button>
+            </div>
+            <div class="history-list" id="historyList"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="reflection">
+        <div class="tab-grid tab-grid--two">
+          <section class="panel-card">
+            <h2>Reflection / Exit Ticket</h2>
+            <div class="reflection-grid">
+              <div class="fill-prompt">
+                <strong>One smart money choice I made was _____.</strong>
+                <textarea placeholder="Type a smart money choice here."></textarea>
+              </div>
+              <div class="fill-prompt">
+                <strong>One thing I wanted but skipped was _____.</strong>
+                <textarea placeholder="Type a want you skipped here."></textarea>
+              </div>
+              <div class="fill-prompt">
+                <strong>Saving helped me because _____.</strong>
+                <textarea placeholder="Type how saving helped here."></textarea>
+              </div>
+              <div class="fill-prompt">
+                <strong>Giving helped my community because _____.</strong>
+                <textarea placeholder="Type how giving helped here."></textarea>
+              </div>
+              <div class="fill-prompt">
+                <strong>Next time I would _____.</strong>
+                <textarea placeholder="Type what you would do differently next time."></textarea>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel-stack">
+            <section class="panel-card">
+              <h2>Random Reflection Question</h2>
+              <p class="helper-copy" id="reflectionPrompt">What helped you save money the fastest?</p>
+              <div class="section-action-row" style="margin-top:14px;">
+                <button class="button button-secondary" id="randomReflectionBtn" type="button">New Reflection Question</button>
+              </div>
+            </section>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="start-end">
+        <div class="tab-grid tab-grid--two">
+          <section class="panel-card">
+            <h2>Start Game / End Game</h2>
+            <div class="button-row">
+              <button class="button button-primary" id="startEndNewGameBtn" type="button">Start New Game</button>
+              <button class="button button-secondary" id="restartCurrentGameBtn" type="button">Restart Current Game</button>
+              <button class="button button-danger" id="endGameEarlyBtn" type="button">End Game Early</button>
+              <button class="button button-neutral" id="showWinnerScreenBtn" type="button">Show Winner Screen</button>
+            </div>
+
+            <div class="teacher-grid" style="margin-top:16px;">
+              <div class="field">
+                <label for="manualWinnerSelect">Declare Winner Manually</label>
+                <select id="manualWinnerSelect"></select>
+              </div>
+              <div class="section-action-row" style="align-items:end;">
+                <button class="button button-primary" id="declareWinnerBtn" type="button">Declare Winner</button>
+              </div>
+            </div>
+
+            <div class="section-action-row" style="margin-top:16px;">
+              <button class="button button-neutral" id="resetAllPlayersBtn" type="button">Reset All Players</button>
+            </div>
+          </section>
+
+          <section class="panel-stack">
+            <section class="panel-card">
+              <h2>End Game Summary</h2>
+              <div id="endGameSummary"></div>
+            </section>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop is-hidden" id="modalBackdrop" aria-hidden="true">
+    <div class="modal-shell" id="modalShell" data-deck="allowance" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-topline">
+        <div class="modal-tag" id="modalTag" data-deck="allowance">Allowance Card</div>
+        <button class="modal-close" id="modalClose" type="button" hidden>Close</button>
+      </div>
+      <h3 id="modalTitle">Card Title</h3>
+      <div class="modal-meta" id="modalMeta"></div>
+      <p class="modal-prompt" id="modalPrompt"></p>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <script>
+    // Board geometry and grade rules
+    const GRADE_RULES = {
+      "2nd Grade": { goal: 500, startingWallet: 100 },
+      "3rd Grade": { goal: 800, startingWallet: 150 },
+      "4th/5th Grade": { goal: 1000, startingWallet: 200 }
+    };
+
+    const DEFAULT_COLORS = ["#ff595e", "#ffca3a", "#1982c4", "#6a4c93", "#2a9d8f", "#f77f00", "#d6288f", "#3a86ff"];
+
+    const TILES = [
+      { id: 0, name: "Start / Allowance", deck: "allowance", left: 1, top: 2, width: 12, height: 15 },
+      { id: 1, name: "Allowance", deck: "allowance", left: 13.5, top: 2, width: 12, height: 15 },
+      { id: 2, name: "Buy", deck: "buy", left: 26, top: 2, width: 12, height: 15 },
+      { id: 3, name: "Chore & Job", deck: "chore", left: 38.5, top: 2, width: 12, height: 15 },
+      { id: 4, name: "Bank", deck: "bank", left: 51, top: 2, width: 12, height: 15 },
+      { id: 5, name: "Need", deck: "need", left: 63.5, top: 2, width: 12, height: 15 },
+      { id: 6, name: "Buy", deck: "buy", left: 76, top: 2, width: 12, height: 15 },
+      { id: 7, name: "Giving", deck: "giving", left: 88.5, top: 2, width: 10.5, height: 15 },
+      { id: 8, name: "Allowance", deck: "allowance", left: 88.5, top: 18, width: 10.5, height: 16 },
+      { id: 9, name: "Sell", deck: "sell", left: 88.5, top: 34.5, width: 10.5, height: 16 },
+      { id: 10, name: "Bank", deck: "bank", left: 88.5, top: 51, width: 10.5, height: 16 },
+      { id: 11, name: "Chore & Job", deck: "chore", left: 88.5, top: 67.5, width: 10.5, height: 16 },
+      { id: 12, name: "Need", deck: "need", left: 88.5, top: 84, width: 10.5, height: 14 },
+      { id: 13, name: "Buy", deck: "buy", left: 76, top: 84, width: 12, height: 14 },
+      { id: 14, name: "Bank", deck: "bank", left: 63.5, top: 84, width: 12, height: 14 },
+      { id: 15, name: "Chore & Job", deck: "chore", left: 51, top: 84, width: 12, height: 14 },
+      { id: 16, name: "Surprise", deck: "surprise", left: 38.5, top: 84, width: 12, height: 14 },
+      { id: 17, name: "Giving", deck: "giving", left: 26, top: 84, width: 12, height: 14 },
+      { id: 18, name: "Sell", deck: "sell", left: 13.5, top: 84, width: 12, height: 14 },
+      { id: 19, name: "Allowance", deck: "allowance", left: 1, top: 84, width: 12, height: 14 },
+      { id: 20, name: "Bank", deck: "bank", left: 1, top: 67.5, width: 12, height: 16 },
+      { id: 21, name: "Buy", deck: "buy", left: 1, top: 51, width: 12, height: 16 },
+      { id: 22, name: "Chore & Job", deck: "chore", left: 1, top: 34.5, width: 12, height: 16 },
+      { id: 23, name: "Need", deck: "need", left: 1, top: 18, width: 12, height: 16 }
+    ];
+
+    const TOKEN_SLOTS = [
+      { x: 0.28, y: 0.28 },
+      { x: 0.5, y: 0.28 },
+      { x: 0.72, y: 0.28 },
+      { x: 0.28, y: 0.54 },
+      { x: 0.5, y: 0.54 },
+      { x: 0.72, y: 0.54 },
+      { x: 0.38, y: 0.78 },
+      { x: 0.62, y: 0.78 }
+    ];
+
+    const DECK_LABELS = {
+      allowance: "Allowance Card",
+      chore: "Chore & Job Card",
+      buy: "Buy Cards",
+      bank: "Bank Card",
+      need: "Need Card",
+      giving: "Giving Card",
+      sell: "Sell Card",
+      surprise: "Surprise Card",
+      help: "Quick Help",
+      winner: "Winner"
+    };
+
+    const TAB_KEYS = ["board", "setup", "players", "rules", "decks", "teacher", "history", "reflection", "start-end"];
+    const DECK_KEYS = ["allowance", "chore", "buy", "bank", "need", "giving", "sell", "surprise"];
+    const DECK_TITLES = {
+      allowance: "Allowance",
+      chore: "Chore & Job",
+      buy: "Buy",
+      bank: "Bank",
+      need: "Need",
+      giving: "Giving",
+      sell: "Sell",
+      surprise: "Surprise"
+    };
+    const REFLECTION_QUESTIONS = [
+      "What helped you save money the fastest?",
+      "What choice made your budget harder?",
+      "What would you do differently next time?",
+      "Which card taught you the biggest money lesson?",
+      "When did saving feel easier than spending?",
+      "How did giving change your money choices?"
+    ];
+
+    const ALLOWANCE_CARDS = [
+      { title: "Weekly allowance", amount: 50, prompt: "You earned your regular allowance. How much of it will you protect for your goal?" },
+      { title: "Helping at home", amount: 30, prompt: "Great teamwork at home. Decide what part of this money should keep working for you." },
+      { title: "Birthday money", amount: 100, prompt: "A surprise gift came your way. Make a smart plan for it." },
+      { title: "Good savings habit bonus", amount: 40, prompt: "Your careful choices paid off. Enjoy the bonus and think ahead." },
+      { title: "Family gift", amount: 75, prompt: "A family gift gives your budget a boost today." },
+      { title: "Report card celebration", amount: 60, prompt: "Celebrate the hard work and decide how much to save." },
+      { title: "Weekend allowance", amount: 40, prompt: "Weekend money arrives. What is the wisest move for your goal?" },
+      { title: "Extra help at home", amount: 25, prompt: "You stepped up with extra help and earned a reward." }
+    ];
+
+    const CHORE_CARDS = [
+      { title: "Finish your chores", amount: 40, prompt: "Chores are done and your wallet grows a little." },
+      { title: "Mow a neighbor's lawn", amount: 80, prompt: "A big job brought in strong pay today." },
+      { title: "Walk a neighbor's dog", amount: 50, prompt: "Helping a neighbor turned into solid spending power." },
+      { title: "Help clean the garage", amount: 60, prompt: "You finished a messy job and earned extra money." },
+      { title: "Babysit with adult nearby", amount: 75, prompt: "You were responsible and got paid for it." },
+      { title: "Rake leaves", amount: 60, prompt: "Leaf duty brought in cash for your budget." },
+      { title: "Wash the car", amount: 50, prompt: "A clean car means more money in your wallet." },
+      { title: "Help set up a family event", amount: 40, prompt: "You pitched in and earned a thank-you payment." },
+      { title: "Take out trash all week", amount: 30, prompt: "Consistency pays off with this weekly reward." },
+      { title: "Help with yard work", amount: 70, prompt: "A big outdoor job gave you a nice payday." }
+    ];
+
+    const BUY_CARDS = [
+      { title: "New shoes", amount: 120, tag: "Could Be Both", prompt: "Would this feel more like a need, a want, or a little of both for you?" },
+      { title: "Video game", amount: 70, tag: "Want", prompt: "Fun costs money. Is this the right time to spend?" },
+      { title: "Snack at school", amount: 10, tag: "Could Be Both", prompt: "Small purchases add up. Is this worth it today?" },
+      { title: "Toy at the store", amount: 25, tag: "Want", prompt: "Would buying this help your goal or slow it down?" },
+      { title: "Arcade trip", amount: 40, tag: "Want", prompt: "This would be fun. Does it fit your plan?" },
+      { title: "Gaming console", amount: 300, tag: "Want", prompt: "Big wants ask for big patience. What should you do?" },
+      { title: "Sporting event ticket", amount: 90, tag: "Want", prompt: "Experiences are exciting, but they still need room in the budget." },
+      { title: "Water park trip", amount: 75, tag: "Want", prompt: "Is the splash worth the cash today?" },
+      { title: "Game pass", amount: 20, tag: "Want", prompt: "Subscriptions can sneak into a budget fast." },
+      { title: "Zoo trip", amount: 35, tag: "Want", prompt: "Could this outing wait until your savings are stronger?" },
+      { title: "Movie ticket", amount: 25, tag: "Want", prompt: "A fun choice is still a money choice." },
+      { title: "Popcorn and drink", amount: 20, tag: "Want", prompt: "Treats are tempting. Decide if this fits your plan." },
+      { title: "Book fair book", amount: 15, tag: "Could Be Both", prompt: "Books can be fun and useful. What feels right here?" },
+      { title: "New backpack", amount: 60, tag: "Could Be Both", prompt: "Could this be helpful enough to move ahead of other wants?" },
+      { title: "Soccer ball", amount: 30, tag: "Want", prompt: "Would this purchase be worth slowing your savings for?" },
+      { title: "Headphones", amount: 45, tag: "Want", prompt: "A cool extra is still a budget decision." },
+      { title: "Art supplies", amount: 25, tag: "Could Be Both", prompt: "Creative tools can help and cost money too. Choose wisely." },
+      { title: "Board game", amount: 35, tag: "Want", prompt: "Fun with friends sounds great. Does the budget agree?" },
+      { title: "Skate night", amount: 25, tag: "Want", prompt: "Would you rather enjoy this now or reach your goal sooner?" },
+      { title: "Theme park souvenir", amount: 30, tag: "Want", prompt: "Souvenirs feel special, but your money still deserves a plan." }
+    ];
+
+    const NEED_CARDS = [
+      { title: "Lunch", amount: 20, prompt: "A basic need popped up. How will you cover it?" },
+      { title: "Water bottle", amount: 15, prompt: "You need a fresh water bottle for the day." },
+      { title: "School supplies", amount: 30, prompt: "These supplies help you stay ready to learn." },
+      { title: "Shoes that fit", amount: 100, prompt: "This is important. Make the best plan you can." },
+      { title: "Coat for cold weather", amount: 120, prompt: "Staying warm matters. Cover what you can without debt." },
+      { title: "Backpack repair", amount: 25, prompt: "Fixing what you have can still cost money." },
+      { title: "Medicine", amount: 40, prompt: "Health comes first. Decide how to pay for this need." },
+      { title: "Hygiene items", amount: 25, prompt: "Daily care items need room in every budget." },
+      { title: "Bus pass or transportation", amount: 30, prompt: "Getting where you need to go matters." },
+      { title: "Healthy snack pack", amount: 15, prompt: "Fuel for the day is a real need." }
+    ];
+
+    const SELL_CARDS = [
+      { title: "Sell old clothes", amount: 40, prompt: "A clean-out turned into extra cash." },
+      { title: "Sell an old toy", amount: 20, prompt: "You turned an unused toy into spending power." },
+      { title: "Sell a video game", amount: 35, prompt: "A game you do not use is now money for your goal." },
+      { title: "Sell a bike helmet you outgrew", amount: 25, prompt: "Outgrown gear can still help your budget." },
+      { title: "Sell books at a yard sale", amount: 30, prompt: "A yard sale gave your wallet a boost." },
+      { title: "Sell sports gear you no longer use", amount: 50, prompt: "Unused gear became fresh money for your plan." },
+      { title: "Sell an old backpack", amount: 20, prompt: "You found value in something you no longer needed." },
+      { title: "Sell a board game", amount: 25, prompt: "That shelf space turned into savings power." },
+      { title: "Sell shoes that no longer fit", amount: 30, prompt: "Outgrown shoes still helped your budget." },
+      { title: "Sell craft items", amount: 15, prompt: "Creative work can bring in cash." },
+      { slug: "old-clothes-choice", title: "Old Clothes Choice", amount: 40, prompt: "You can earn money from old clothes or donate them and grow your giving habits." }
+    ];
+
+    const GIVING_CARDS = [
+      { slug: "donate-clothes", title: "Donate old clothes", prompt: "Would you like to celebrate this generous choice with a Giving Badge?" },
+      { slug: "give-25", title: "Give $25 to the Giving Box", amount: 25, prompt: "Giving is always optional and positive. Would you like to share today?" },
+      { slug: "help-neighbor", title: "Help a neighbor for free", prompt: "Serving someone is powerful too. Claim a Service Badge if you choose." },
+      { slug: "donate-supplies", title: "Donate school supplies", amount: 20, prompt: "You can give money or simply honor the generous act with a badge." },
+      { slug: "thank-you-card", title: "Make a thank-you card", prompt: "Kind words count as service too." },
+      { slug: "food-pantry", title: "Help at a food pantry", prompt: "Choose whether to count this caring action as service." },
+      { slug: "donate-toy", title: "Donate a toy", amount: 25, prompt: "Would you like to donate and collect a Giving Badge?" },
+      { slug: "clean-park", title: "Help clean a park", prompt: "Helping the community can earn a Service Badge." },
+      { slug: "give-10", title: "Give $10 if you can", amount: 10, prompt: "You may give if it fits your budget, or skip kindly." },
+      { slug: "save-or-give", title: "Choose: Save your money or give $25", amount: 25, prompt: "Both saving and giving can be wise. Which choice fits this moment?" }
+    ];
+
+    const BANK_CARDS = [
+      { slug: "deposit-any", title: "Deposit any amount into savings", prompt: "Move as much wallet money as you want into savings." },
+      { slug: "save-50-badge", title: "Deposit $50 or more and earn a Smart Saver Badge", prompt: "Can you save at least $50 today?" },
+      { slug: "save-100-bonus", title: "Deposit $100 or more and collect a $25 savings bonus", prompt: "A big deposit could unlock an extra bonus." },
+      { slug: "move-wallet", title: "Move money from wallet to savings", prompt: "Choose how much wallet money should go work toward your goal." },
+      { slug: "budget-check", title: "Check your budget: choose how much to save", prompt: "Pause and decide what amount feels smart right now." },
+      { slug: "half-wallet", title: "Savings Challenge: save at least half your wallet if you can", prompt: "Challenge yourself to move half your wallet into savings." },
+      { slug: "rainy-day", title: "Rainy Day Fund: deposit $25 or more", prompt: "A rainy day fund grows when you save at least $25." },
+      { slug: "goal-check", title: "Goal Check: count your savings", prompt: "Look at your progress. You can save more now or just check your total." }
+    ];
+
+    const SURPRISE_CARDS = [
+      { slug: "lost-water-bottle", title: "Lost water bottle", amount: 15, prompt: "Unexpected costs happen. Cover what you can without debt." },
+      { slug: "found-birthday-money", title: "Found birthday money", amount: 50, prompt: "A happy surprise gave your wallet a boost." },
+      { slug: "fundraiser", title: "School fundraiser", amount: 20, prompt: "You may choose to give $20 or keep your budget steady." },
+      { slug: "bike-repair", title: "Bike tire repair", amount: 25, prompt: "A repair shows up out of nowhere. Make the best plan you can." },
+      { slug: "forgot-lunch", title: "Forgot lunch", amount: 10, prompt: "A small surprise still takes a little money." },
+      { slug: "coupon-day", title: "Coupon day", amount: 20, prompt: "Save this coupon for your next Buy card." },
+      { slug: "family-movie-night", title: "Family movie night paid for you", prompt: "Collect a Free Fun Card for later." },
+      { slug: "helped-someone", title: "Helped someone", prompt: "Your kindness earns a Service Badge." },
+      { slug: "unexpected-chore", title: "Unexpected chore", amount: 30, prompt: "A surprise job brings in extra money." },
+      { slug: "replacement-pencils", title: "Replacement pencils", amount: 5, prompt: "This small school cost still needs a plan." },
+      { slug: "rainy-day-fund-saves-you", title: "Rainy day fund saves you", amount: 25, prompt: "If your savings is at least $100, you are covered. Otherwise pay $25." },
+      { slug: "smart-choice-bonus", title: "Smart choice bonus", prompt: "If you have skipped a want before, your smart choice earns more money today." }
+    ];
+
+    const FIREBASE_MODULES = {
+      app: "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+      database: "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"
+    };
+
+    const firebaseConfig = {
+      apiKey: "PASTE_API_KEY_HERE",
+      authDomain: "PASTE_PROJECT.firebaseapp.com",
+      databaseURL: "https://PASTE_PROJECT-default-rtdb.firebaseio.com",
+      projectId: "PASTE_PROJECT",
+      storageBucket: "PASTE_PROJECT.appspot.com",
+      messagingSenderId: "PASTE_SENDER_ID",
+      appId: "PASTE_APP_ID"
+    };
+
+    /*
+      Firebase Realtime Database rules reminder:
+      Configure database rules before you share the room link publicly.
+
+      Development-only example:
+      {
+        "rules": {
+          "scoutMonopolyRooms": {
+            "$roomCode": {
+              ".read": true,
+              ".write": true
+            }
+          }
+        }
+      }
+
+      Warning:
+      The development rules above are convenient for classroom testing but are not secure for long-term public sharing.
+      A safer classroom setup should later require a teacher PIN for host actions, limit student writes to their own player profile
+      and current-turn choices, validate wallet and savings values, cap the room at 8 players, and validate known deck and tile names.
+    */
+
+    const STORAGE_KEY = "scout-monopoly-multiplayer-session";
+
+    // Firebase adapter layer
+    let firebaseApi = null;
+    let localModal = null;
+
+    const setupState = {
+      count: 4,
+      gradeKey: "3rd Grade",
+      players: DEFAULT_COLORS.map((color, index) => ({ name: "Scout " + (index + 1), color }))
+    };
+
+    const session = {
+      mode: "gate",
+      role: "teacher",
+      roomCode: "",
+      playerId: "",
+      teacherPin: "",
+      teacherName: "",
+      firebaseReady: false,
+      firebaseMessage: "Firebase status will appear here. Local Practice Mode stays available even if Firebase is not ready yet.",
+      firebaseTone: "info",
+      connectionLabel: "Offline",
+      authBusy: false,
+      writeInProgress: false,
+      roomRef: null,
+      roomUnsubscribe: null,
+      presenceTimer: null
+    };
+
+    const state = {
+      roomCode: "",
+      createdAt: null,
+      updatedAt: null,
+      teacherPin: "",
+      teacherName: "",
+      gradeKey: "3rd Grade",
+      players: [],
+      currentPlayerIndex: 0,
+      teacherPlayerIndex: 0,
+      diceResult: null,
+      debugZones: false,
+      teacherMode: false,
+      classroomMode: false,
+      activeTab: "board",
+      phase: "idle",
+      phaseAfterQueue: null,
+      pendingEvents: [],
+      activeModal: null,
+      winnerIndex: null,
+      history: [],
+      historyCounter: 0,
+      reflectionQuestion: REFLECTION_QUESTIONS[0],
+      gameEndedEarly: false,
+      inspectedTileId: 0,
+      statusMessage: "Set up your scouts, then start a new game.",
+      decks: {},
+      gameStarted: false,
+      gameOver: false,
+      roomLocked: false,
+      resolvingAction: false
+    };
+
+    const refs = {
+      roomGate: document.getElementById("roomGate"),
+      firebaseStatusBanner: document.getElementById("firebaseStatusBanner"),
+      createTeacherRoomBtn: document.getElementById("createTeacherRoomBtn"),
+      joinGameRoomBtn: document.getElementById("joinGameRoomBtn"),
+      startLocalPracticeBtn: document.getElementById("startLocalPracticeBtn"),
+      teacherNameInput: document.getElementById("teacherNameInput"),
+      teacherPinInput: document.getElementById("teacherPinInput"),
+      joinRoomCodeInput: document.getElementById("joinRoomCodeInput"),
+      joinPlayerNameInput: document.getElementById("joinPlayerNameInput"),
+      joinPlayerColorInput: document.getElementById("joinPlayerColorInput"),
+      roomBanner: document.getElementById("roomBanner"),
+      bannerModeBadge: document.getElementById("bannerModeBadge"),
+      bannerRoomCode: document.getElementById("bannerRoomCode"),
+      bannerRole: document.getElementById("bannerRole"),
+      bannerConnection: document.getElementById("bannerConnection"),
+      shareLinkOutput: document.getElementById("shareLinkOutput"),
+      copyStudentLinkBtn: document.getElementById("copyStudentLinkBtn"),
+      copyRoomCodeBtn: document.getElementById("copyRoomCodeBtn"),
+      leaveRoomBtn: document.getElementById("leaveRoomBtn"),
+      roomBannerNote: document.getElementById("roomBannerNote"),
+      setupModeNote: document.getElementById("setupModeNote"),
+      tabButtons: Array.from(document.querySelectorAll("[data-tab]")),
+      tabPanels: Array.from(document.querySelectorAll("[data-tab-panel]")),
+      boardOverlay: document.getElementById("boardOverlay"),
+      tokenLayer: document.getElementById("tokenLayer"),
+      boardStatus: document.getElementById("boardStatus"),
+      tileInfo: document.getElementById("tileInfo"),
+      newGameBtn: document.getElementById("newGameBtn"),
+      rollDiceBtn: document.getElementById("rollDiceBtn"),
+      endTurnBtn: document.getElementById("endTurnBtn"),
+      printBoardBtn: document.getElementById("printBoardBtn"),
+      boardHelpBtn: document.getElementById("boardHelpBtn"),
+      helpBtn: document.getElementById("helpBtn"),
+      summaryPlayer: document.getElementById("summaryPlayer"),
+      summaryDice: document.getElementById("summaryDice"),
+      summaryWallet: document.getElementById("summaryWallet"),
+      summarySavings: document.getElementById("summarySavings"),
+      summaryGoal: document.getElementById("summaryGoal"),
+      summaryGrade: document.getElementById("summaryGrade"),
+      summaryTile: document.getElementById("summaryTile"),
+      teacherModeBadge: document.getElementById("teacherModeBadge"),
+      classroomModeBadge: document.getElementById("classroomModeBadge"),
+      boardHistoryPreview: document.getElementById("boardHistoryPreview"),
+      gradeSelect: document.getElementById("gradeSelect"),
+      playerCountInput: document.getElementById("playerCountInput"),
+      debugToggle: document.getElementById("debugToggle"),
+      teacherModeToggle: document.getElementById("teacherModeToggle"),
+      classroomModeToggle: document.getElementById("classroomModeToggle"),
+      setupRows: document.getElementById("setupRows"),
+      currentPlayerCard: document.getElementById("currentPlayerCard"),
+      playerList: document.getElementById("playerList"),
+      deckTargetSelect: document.getElementById("deckTargetSelect"),
+      deckList: document.getElementById("deckList"),
+      teacherToolsShell: document.getElementById("teacherToolsShell"),
+      teacherVisibilityNote: document.getElementById("teacherVisibilityNote"),
+      teacherModeStatusBadge: document.getElementById("teacherModeStatusBadge"),
+      teacherPlayerSelect: document.getElementById("teacherPlayerSelect"),
+      teacherWalletInput: document.getElementById("teacherWalletInput"),
+      teacherSavingsInput: document.getElementById("teacherSavingsInput"),
+      teacherTileSelect: document.getElementById("teacherTileSelect"),
+      teacherDeckSelect: document.getElementById("teacherDeckSelect"),
+      historyList: document.getElementById("historyList"),
+      clearHistoryBtn: document.getElementById("clearHistoryBtn"),
+      reflectionPrompt: document.getElementById("reflectionPrompt"),
+      randomReflectionBtn: document.getElementById("randomReflectionBtn"),
+      startEndNewGameBtn: document.getElementById("startEndNewGameBtn"),
+      restartCurrentGameBtn: document.getElementById("restartCurrentGameBtn"),
+      endGameEarlyBtn: document.getElementById("endGameEarlyBtn"),
+      showWinnerScreenBtn: document.getElementById("showWinnerScreenBtn"),
+      manualWinnerSelect: document.getElementById("manualWinnerSelect"),
+      declareWinnerBtn: document.getElementById("declareWinnerBtn"),
+      resetAllPlayersBtn: document.getElementById("resetAllPlayersBtn"),
+      endGameSummary: document.getElementById("endGameSummary"),
+      resetAllDecksBtn: document.getElementById("resetAllDecksBtn"),
+      lockRoomBtn: document.getElementById("lockRoomBtn"),
+      deleteRoomBtn: document.getElementById("deleteRoomBtn"),
+      modalBackdrop: document.getElementById("modalBackdrop"),
+      modalShell: document.getElementById("modalShell"),
+      modalTag: document.getElementById("modalTag"),
+      modalClose: document.getElementById("modalClose"),
+      modalTitle: document.getElementById("modalTitle"),
+      modalMeta: document.getElementById("modalMeta"),
+      modalPrompt: document.getElementById("modalPrompt"),
+      modalBody: document.getElementById("modalBody"),
+      modalActions: document.getElementById("modalActions")
+    };
+
+    function formatMoney(amount) {
+      return "$" + Number(amount || 0).toLocaleString();
+    }
+
+    function shuffle(array) {
+      const copy = array.slice();
+      for (let index = copy.length - 1; index > 0; index -= 1) {
+        const randomIndex = Math.floor(Math.random() * (index + 1));
+        [copy[index], copy[randomIndex]] = [copy[randomIndex], copy[index]];
+      }
+      return copy;
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function deepClone(value) {
+      return value == null ? value : JSON.parse(JSON.stringify(value));
+    }
+
+    function getGoal(target = state) {
+      return GRADE_RULES[target.gradeKey].goal;
+    }
+
+    function deckFactory(cards) {
+      return {
+        drawPile: shuffle(cards.map((card) => ({ ...card }))),
+        discardPile: []
+      };
+    }
+
+    function createDecks() {
+      return {
+        allowance: deckFactory(ALLOWANCE_CARDS),
+        chore: deckFactory(CHORE_CARDS),
+        buy: deckFactory(BUY_CARDS),
+        bank: deckFactory(BANK_CARDS),
+        need: deckFactory(NEED_CARDS),
+        sell: deckFactory(SELL_CARDS),
+        giving: deckFactory(GIVING_CARDS),
+        surprise: deckFactory(SURPRISE_CARDS)
+      };
+    }
+
+    function normalizeDecks(rawDecks) {
+      const fresh = createDecks();
+      const decks = {};
+      DECK_KEYS.forEach((deckKey) => {
+        const rawDeck = rawDecks && rawDecks[deckKey] ? rawDecks[deckKey] : {};
+        decks[deckKey] = {
+          drawPile: Array.isArray(rawDeck.drawPile) ? rawDeck.drawPile.map((card) => ({ ...card })) : fresh[deckKey].drawPile,
+          discardPile: Array.isArray(rawDeck.discardPile) ? rawDeck.discardPile.map((card) => ({ ...card })) : []
+        };
+      });
+      return decks;
+    }
+
+    function drawCards(target, deckKey, count) {
+      const deck = target.decks[deckKey];
+      const cards = [];
+      while (cards.length < count) {
+        if (!deck.drawPile.length) {
+          deck.drawPile = shuffle(deck.discardPile.map((card) => ({ ...card })));
+          deck.discardPile = [];
+        }
+        if (!deck.drawPile.length) {
+          break;
+        }
+        cards.push(deck.drawPile.pop());
+      }
+      return cards;
+    }
+
+    function discardCards(target, deckKey, cards) {
+      if (!deckKey || !cards || !cards.length) {
+        return;
+      }
+      target.decks[deckKey].discardPile.push(...cards.map((card) => ({ ...card })));
+    }
+
+    function ensureSetupPlayers() {
+      while (setupState.players.length < 8) {
+        const index = setupState.players.length;
+        setupState.players.push({ name: "Scout " + (index + 1), color: DEFAULT_COLORS[index] });
+      }
+    }
+
+    function sanitizeName(name, fallback) {
+      const trimmed = String(name || "").trim();
+      return trimmed || fallback;
+    }
+
+    function sanitizeRoomCode(value) {
+      return String(value || "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
+    }
+
+    function baseGameUrl() {
+      const raw = window.location.href.split("?")[0].split("#")[0];
+      if (window.location.origin && window.location.origin !== "null") {
+        return window.location.origin + window.location.pathname;
+      }
+      return raw;
+    }
+
+    function buildShareLink(roomCode) {
+      return roomCode ? baseGameUrl() + "?room=" + encodeURIComponent(roomCode) : baseGameUrl();
+    }
+
+    function generateId(prefix) {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") {
+        return prefix + "-" + window.crypto.randomUUID();
+      }
+      return prefix + "-" + Math.random().toString(36).slice(2, 11);
+    }
+
+    function generateRoomCode() {
+      return "SCOUT-" + Math.floor(100 + Math.random() * 900);
+    }
+
+    function generateTeacherPin() {
+      return String(Math.floor(1000 + Math.random() * 9000));
+    }
+
+    function hasFirebaseConfig() {
+      return !Object.values(firebaseConfig).some((value) => String(value).includes("PASTE_"));
+    }
+
+    function setFirebaseStatus(message, tone = "info") {
+      session.firebaseMessage = message;
+      session.firebaseTone = tone;
+      refs.firebaseStatusBanner.textContent = message;
+      refs.firebaseStatusBanner.classList.toggle("is-warning", tone === "warning");
+      refs.firebaseStatusBanner.classList.toggle("is-error", tone === "error");
+    }
+
+    async function loadFirebaseSdk() {
+      if (firebaseApi) {
+        return firebaseApi;
+      }
+      if (!hasFirebaseConfig()) {
+        throw new Error("Firebase config is still using placeholders. Add your Firebase project values to enable live rooms.");
+      }
+      const [{ initializeApp }, databaseModule] = await Promise.all([
+        import(FIREBASE_MODULES.app),
+        import(FIREBASE_MODULES.database)
+      ]);
+      const app = initializeApp(firebaseConfig);
+      firebaseApi = {
+        app,
+        database: databaseModule.getDatabase(app),
+        ref: databaseModule.ref,
+        set: databaseModule.set,
+        get: databaseModule.get,
+        update: databaseModule.update,
+        remove: databaseModule.remove,
+        onValue: databaseModule.onValue,
+        onDisconnect: databaseModule.onDisconnect,
+        runTransaction: databaseModule.runTransaction
+      };
+      session.firebaseReady = true;
+      setFirebaseStatus("Firebase is ready. You can create or join a shared room.", "info");
+      return firebaseApi;
+    }
+
+    function saveStoredSession() {
+      const payload = {
+        mode: session.mode,
+        role: session.role,
+        roomCode: session.roomCode,
+        playerId: session.playerId,
+        teacherPin: session.teacherPin,
+        teacherName: session.teacherName
+      };
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    function loadStoredSession() {
+      try {
+        return JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "null");
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function clearStoredSession() {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+
+    function normalizePlayer(config, index, gradeKey) {
+      return {
+        id: config.id || generateId("player"),
+        name: sanitizeName(config.name, "Scout " + (index + 1)),
+        color: config.color || DEFAULT_COLORS[index % DEFAULT_COLORS.length],
+        joinOrder: Number.isFinite(config.joinOrder) ? config.joinOrder : index,
+        tile: Number.isFinite(config.tile) ? config.tile : 0,
+        wallet: Number.isFinite(config.wallet) ? config.wallet : GRADE_RULES[gradeKey].startingWallet,
+        savings: Number.isFinite(config.savings) ? config.savings : 0,
+        givingBadges: Number.isFinite(config.givingBadges) ? config.givingBadges : 0,
+        serviceBadges: Number.isFinite(config.serviceBadges) ? config.serviceBadges : 0,
+        freeFunCards: Number.isFinite(config.freeFunCards) ? config.freeFunCards : 0,
+        smartSaverBadges: Number.isFinite(config.smartSaverBadges) ? config.smartSaverBadges : 0,
+        nextBuyDiscount: Number.isFinite(config.nextBuyDiscount) ? config.nextBuyDiscount : 0,
+        skippedWant: Boolean(config.skippedWant),
+        turnsTaken: Number.isFinite(config.turnsTaken) ? config.turnsTaken : 0,
+        isConnected: config.isConnected !== false,
+        lastSeen: config.lastSeen || Date.now()
+      };
+    }
+
+    function makePlayer(config, gradeKey = state.gradeKey) {
+      return normalizePlayer({
+        ...config,
+        tile: 0,
+        wallet: GRADE_RULES[gradeKey].startingWallet,
+        savings: 0,
+        givingBadges: 0,
+        serviceBadges: 0,
+        freeFunCards: 0,
+        smartSaverBadges: 0,
+        nextBuyDiscount: 0,
+        skippedWant: false,
+        turnsTaken: 0,
+        isConnected: config.isConnected !== false,
+        lastSeen: config.lastSeen || Date.now()
+      }, config.joinOrder || 0, gradeKey);
+    }
+
+    function historyArrayFromObject(rawHistory) {
+      return Object.values(rawHistory || {})
+        .map((entry, index) => ({
+          id: entry.id || "log-" + index,
+          timestamp: entry.timestamp || Date.now(),
+          message: entry.message || "",
+          playerId: entry.playerId || null,
+          type: entry.type || "status"
+        }))
+        .sort((left, right) => right.timestamp - left.timestamp)
+        .slice(0, 100);
+    }
+
+    function serializeRoomState(target = state) {
+      return {
+        roomCode: target.roomCode,
+        createdAt: target.createdAt || Date.now(),
+        updatedAt: Date.now(),
+        teacherPin: target.teacherPin || "",
+        teacherName: target.teacherName || "",
+        gradeKey: target.gradeKey,
+        goal: getGoal(target),
+        gameStarted: Boolean(target.gameStarted),
+        gameOver: Boolean(target.gameOver),
+        roomLocked: Boolean(target.roomLocked),
+        winnerIndex: target.winnerIndex == null ? null : target.winnerIndex,
+        currentPlayerIndex: target.currentPlayerIndex,
+        diceResult: target.diceResult == null ? null : target.diceResult,
+        phase: target.phase,
+        phaseAfterQueue: target.phaseAfterQueue || null,
+        statusMessage: target.statusMessage,
+        inspectedTileId: target.inspectedTileId,
+        debugZones: Boolean(target.debugZones),
+        classroomMode: Boolean(target.classroomMode),
+        teacherMode: Boolean(target.teacherMode),
+        resolvingAction: Boolean(target.resolvingAction),
+        players: Object.fromEntries(target.players.map((player, index) => [player.id, {
+          ...player,
+          joinOrder: Number.isFinite(player.joinOrder) ? player.joinOrder : index
+        }])),
+        playerOrder: target.players.map((player) => player.id),
+        decks: deepClone(target.decks),
+        activeModal: target.activeModal ? deepClone(target.activeModal) : { isOpen: false },
+        pendingEvents: deepClone(target.pendingEvents),
+        turnHistory: Object.fromEntries(target.history.slice(0, 100).map((entry) => [entry.id, { ...entry }])),
+        historyCounter: target.historyCounter,
+        reflectionQuestion: target.reflectionQuestion,
+        gameEndedEarly: Boolean(target.gameEndedEarly)
+      };
+    }
+
+    function normalizeRoomData(raw) {
+      const gradeKey = raw.gradeKey || "3rd Grade";
+      const playersById = raw.players || {};
+      const playerOrder = Array.isArray(raw.playerOrder) && raw.playerOrder.length
+        ? raw.playerOrder
+        : Object.keys(playersById).sort((left, right) => {
+            return (playersById[left].joinOrder || 0) - (playersById[right].joinOrder || 0);
+          });
+      const players = playerOrder
+        .map((playerId, index) => normalizePlayer({ ...playersById[playerId], id: playerId }, index, gradeKey))
+        .slice(0, 8);
+      const history = Array.isArray(raw.history) ? raw.history.slice(0, 100) : historyArrayFromObject(raw.turnHistory);
+      return {
+        roomCode: raw.roomCode || "",
+        createdAt: raw.createdAt || Date.now(),
+        updatedAt: raw.updatedAt || Date.now(),
+        teacherPin: raw.teacherPin || "",
+        teacherName: raw.teacherName || "",
+        gradeKey,
+        players,
+        currentPlayerIndex: clamp(Number.parseInt(raw.currentPlayerIndex, 10) || 0, 0, Math.max(0, players.length - 1)),
+        diceResult: raw.diceResult == null ? null : raw.diceResult,
+        debugZones: Boolean(raw.debugZones),
+        teacherMode: Boolean(raw.teacherMode),
+        classroomMode: Boolean(raw.classroomMode),
+        phase: raw.phase || "idle",
+        phaseAfterQueue: raw.phaseAfterQueue || null,
+        pendingEvents: Array.isArray(raw.pendingEvents) ? raw.pendingEvents : [],
+        activeModal: raw.activeModal && raw.activeModal.isOpen ? raw.activeModal : null,
+        winnerIndex: raw.winnerIndex == null ? null : raw.winnerIndex,
+        history,
+        historyCounter: Number.isFinite(raw.historyCounter) ? raw.historyCounter : history.length,
+        reflectionQuestion: raw.reflectionQuestion || REFLECTION_QUESTIONS[0],
+        gameEndedEarly: Boolean(raw.gameEndedEarly),
+        inspectedTileId: Number.isFinite(raw.inspectedTileId) ? raw.inspectedTileId : 0,
+        statusMessage: raw.statusMessage || "Set up your scouts, then start a new game.",
+        decks: normalizeDecks(raw.decks),
+        gameStarted: Boolean(raw.gameStarted),
+        gameOver: Boolean(raw.gameOver),
+        roomLocked: Boolean(raw.roomLocked),
+        resolvingAction: Boolean(raw.resolvingAction)
+      };
+    }
+
+    function applySnapshot(snapshot) {
+      state.roomCode = snapshot.roomCode;
+      state.createdAt = snapshot.createdAt;
+      state.updatedAt = snapshot.updatedAt;
+      state.teacherPin = snapshot.teacherPin;
+      state.teacherName = snapshot.teacherName;
+      state.gradeKey = snapshot.gradeKey;
+      state.players = snapshot.players;
+      state.currentPlayerIndex = snapshot.currentPlayerIndex;
+      state.teacherPlayerIndex = clamp(state.teacherPlayerIndex, 0, Math.max(0, snapshot.players.length - 1));
+      state.diceResult = snapshot.diceResult;
+      state.debugZones = snapshot.debugZones;
+      state.teacherMode = snapshot.teacherMode;
+      state.classroomMode = snapshot.classroomMode;
+      state.phase = snapshot.phase;
+      state.phaseAfterQueue = snapshot.phaseAfterQueue;
+      state.pendingEvents = snapshot.pendingEvents;
+      state.activeModal = snapshot.activeModal;
+      state.winnerIndex = snapshot.winnerIndex;
+      state.history = snapshot.history;
+      state.historyCounter = snapshot.historyCounter;
+      state.reflectionQuestion = snapshot.reflectionQuestion;
+      state.gameEndedEarly = snapshot.gameEndedEarly;
+      state.inspectedTileId = snapshot.inspectedTileId;
+      state.statusMessage = snapshot.statusMessage;
+      state.decks = snapshot.decks;
+      state.gameStarted = snapshot.gameStarted;
+      state.gameOver = snapshot.gameOver;
+      state.roomLocked = snapshot.roomLocked;
+      state.resolvingAction = snapshot.resolvingAction;
+      refs.gradeSelect.value = state.gradeKey;
+    }
+
+    function tileDescription(tile) {
+      if (!tile) {
+        return "Click a board space to inspect what happens there.";
+      }
+      if (tile.id === 0) {
+        return "Start / Allowance: draw 1 Allowance Card and collect the money.";
+      }
+      if (tile.deck === "buy") {
+        return "Buy: draw 4 Buy Cards, choose one to buy, or skip all.";
+      }
+      return tile.name + ": draw 1 " + DECK_LABELS[tile.deck].replace("Cards", "Card") + " and follow it.";
+    }
+
+    function currentPlayer(target = state) {
+      return target.players[target.currentPlayerIndex] || null;
+    }
+
+    function selectedTeacherPlayer(target = state) {
+      return target.players[target.teacherPlayerIndex] || target.players[0] || null;
+    }
+
+    function getLeadingPlayerIndex(target = state) {
+      if (!target.players.length) {
+        return null;
+      }
+      let bestIndex = 0;
+      for (let index = 1; index < target.players.length; index += 1) {
+        const contender = target.players[index];
+        const best = target.players[bestIndex];
+        if (contender.savings > best.savings || (contender.savings === best.savings && contender.wallet > best.wallet)) {
+          bestIndex = index;
+        }
+      }
+      return bestIndex;
+    }
+
+    function addHistoryEntry(target, message, options = {}) {
+      target.historyCounter += 1;
+      target.history.unshift({
+        id: "log-" + target.historyCounter,
+        timestamp: Date.now(),
+        message,
+        playerId: options.playerId || null,
+        type: options.type || "status"
+      });
+      target.history = target.history.slice(0, 100);
+    }
+
+    function setStatus(target, message, options = {}) {
+      target.statusMessage = message;
+      if (options.log !== false) {
+        addHistoryEntry(target, message, {
+          playerId: options.playerId || currentPlayer(target)?.id || null,
+          type: options.type || "status"
+        });
+      }
+    }
+
+    function adjustWallet(target, playerIndex, delta) {
+      target.players[playerIndex].wallet = Math.max(0, target.players[playerIndex].wallet + delta);
+    }
+
+    function adjustSavings(target, playerIndex, delta) {
+      target.players[playerIndex].savings = Math.max(0, target.players[playerIndex].savings + delta);
+    }
+
+    function moveWalletToSavings(target, playerIndex, amount) {
+      const player = target.players[playerIndex];
+      const safeAmount = clamp(amount, 0, player.wallet);
+      player.wallet -= safeAmount;
+      player.savings += safeAmount;
+      return safeAmount;
+    }
+
+    function coverCost(target, playerIndex, amount, strategy) {
+      const player = target.players[playerIndex];
+      let remaining = amount;
+      let fromWallet = 0;
+      let fromSavings = 0;
+
+      if (strategy === "wallet") {
+        fromWallet = Math.min(player.wallet, remaining);
+        player.wallet -= fromWallet;
+        remaining -= fromWallet;
+      }
+
+      if (strategy === "wallet-savings") {
+        fromWallet = Math.min(player.wallet, remaining);
+        player.wallet -= fromWallet;
+        remaining -= fromWallet;
+        fromSavings = Math.min(player.savings, remaining);
+        player.savings -= fromSavings;
+        remaining -= fromSavings;
+      }
+
+      if (strategy === "wallet-partial") {
+        fromWallet = player.wallet;
+        player.wallet = 0;
+        remaining -= fromWallet;
+      }
+
+      if (strategy === "savings-partial" || strategy === "savings-full") {
+        fromSavings = Math.min(player.savings, remaining);
+        player.savings -= fromSavings;
+        remaining -= fromSavings;
+      }
+
+      return { fromWallet, fromSavings, remaining };
+    }
+
+    function isLocalMode() {
+      return session.mode === "local";
+    }
+
+    function isRemoteMode() {
+      return session.mode === "remote";
+    }
+
+    function isTeacher() {
+      return isLocalMode() || session.role === "teacher";
+    }
+
+    function isStudent() {
+      return session.role === "student";
+    }
+
+    function isViewer() {
+      return session.role === "viewer";
+    }
+
+    function myPlayerIndex(target = state) {
+      return target.players.findIndex((player) => player.id === session.playerId);
+    }
+
+    function isMyTurn(target = state) {
+      const activePlayer = currentPlayer(target);
+      return Boolean(isStudent() && activePlayer && activePlayer.id === session.playerId);
+    }
+
+    function canUseTeacherTools() {
+      return isTeacher();
+    }
+
+    function canRollDice() {
+      return Boolean(state.gameStarted && !state.gameOver && !state.roomLocked && state.phase === "awaiting_roll" && !state.activeModal && (isTeacher() || isMyTurn()) && !session.writeInProgress);
+    }
+
+    function canEndTurn() {
+      return Boolean(state.gameStarted && !state.gameOver && !state.roomLocked && state.phase === "awaiting_end_turn" && !state.activeModal && (isTeacher() || isMyTurn()) && !session.writeInProgress);
+    }
+
+    function canResolveModal(modal = state.activeModal) {
+      if (!modal || !modal.isOpen) {
+        return false;
+      }
+      const activePlayer = state.players[modal.playerIndex];
+      if (!activePlayer) {
+        return isTeacher();
+      }
+      return isTeacher() || (isStudent() && currentPlayer() && currentPlayer().id === session.playerId && activePlayer.id === session.playerId);
+    }
+
+    function copyToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      return Promise.reject(new Error("Clipboard is not available in this browser."));
+    }
+
+    function pickAvailableColor(players, requestedColor) {
+      const used = new Set(players.map((player) => player.color));
+      if (requestedColor && !used.has(requestedColor)) {
+        return requestedColor;
+      }
+      return DEFAULT_COLORS.find((color) => !used.has(color)) || requestedColor || DEFAULT_COLORS[0];
+    }
+
+    async function saveRoomState(partialState) {
+      if (!isRemoteMode() || !firebaseApi || !session.roomRef) {
+        return;
+      }
+      await firebaseApi.update(session.roomRef, partialState);
+    }
+
+    async function updatePlayer(playerId, partialPlayer) {
+      if (!isRemoteMode() || !firebaseApi || !session.roomCode || !playerId) {
+        return;
+      }
+      const playerRef = firebaseApi.ref(firebaseApi.database, "scoutMonopolyRooms/" + session.roomCode + "/players/" + playerId);
+      await firebaseApi.update(playerRef, partialPlayer);
+    }
+
+    async function updateDeck(deckKey, partialDeck) {
+      if (!isRemoteMode() || !firebaseApi || !session.roomCode || !deckKey) {
+        return;
+      }
+      const deckRef = firebaseApi.ref(firebaseApi.database, "scoutMonopolyRooms/" + session.roomCode + "/decks/" + deckKey);
+      await firebaseApi.update(deckRef, partialDeck);
+    }
+
+    async function deleteRoom() {
+      if (!isRemoteMode() || !firebaseApi || !session.roomRef) {
+        return;
+      }
+      await firebaseApi.remove(session.roomRef);
+      await leaveRoom(true);
+    }
+
+    function buildLocalPracticeState() {
+      updateSetupFromInputs();
+      state.roomCode = "";
+      state.createdAt = Date.now();
+      state.updatedAt = Date.now();
+      state.teacherPin = "";
+      state.teacherName = "Local Practice";
+      state.gradeKey = setupState.gradeKey;
+      state.players = setupState.players.slice(0, setupState.count).map((player, index) => makePlayer({
+        id: "local-player-" + (index + 1),
+        joinOrder: index,
+        name: player.name,
+        color: player.color,
+        isConnected: true
+      }, setupState.gradeKey));
+      state.currentPlayerIndex = 0;
+      state.teacherPlayerIndex = 0;
+      state.diceResult = null;
+      state.debugZones = false;
+      state.teacherMode = false;
+      state.classroomMode = false;
+      state.phase = "idle";
+      state.phaseAfterQueue = null;
+      state.pendingEvents = [];
+      state.activeModal = null;
+      state.winnerIndex = null;
+      state.history = [];
+      state.historyCounter = 0;
+      state.reflectionQuestion = REFLECTION_QUESTIONS[0];
+      state.gameEndedEarly = false;
+      state.inspectedTileId = 0;
+      state.statusMessage = "Local Practice Mode is ready. Use Setup to start a game.";
+      state.decks = createDecks();
+      state.gameStarted = false;
+      state.gameOver = false;
+      state.roomLocked = false;
+      state.resolvingAction = false;
+      refs.gradeSelect.value = state.gradeKey;
+    }
+
+    function setActiveTab(tabKey) {
+      const safeTab = TAB_KEYS.includes(tabKey) ? tabKey : "board";
+      state.activeTab = state.classroomMode ? "board" : safeTab;
+      render();
+    }
+
+    function updateSetupFromInputs() {
+      setupState.gradeKey = refs.gradeSelect.value;
+      if (!isLocalMode()) {
+        return;
+      }
+      setupState.count = clamp(Number.parseInt(refs.playerCountInput.value, 10) || 2, 2, 8);
+      refs.playerCountInput.value = String(setupState.count);
+      ensureSetupPlayers();
+      const rows = refs.setupRows.querySelectorAll(".setup-player-row");
+      rows.forEach((row, index) => {
+        const nameInput = row.querySelector("input[type='text']");
+        const colorInput = row.querySelector("input[type='color']");
+        if (setupState.players[index]) {
+          setupState.players[index].name = sanitizeName(nameInput.value, "Scout " + (index + 1));
+          setupState.players[index].color = colorInput.value;
+        }
+      });
+    }
+
+    function renderSetupRows() {
+      refs.setupRows.innerHTML = "";
+      refs.gradeSelect.disabled = !isTeacher() || session.writeInProgress;
+      refs.playerCountInput.disabled = !isLocalMode() || session.writeInProgress;
+      refs.setupModeNote.textContent = isRemoteMode()
+        ? "Players join the live room themselves. The teacher can choose the grade level and start the shared game when the class roster is ready."
+        : "Choose the grade level, set player names and colors, then start the game.";
+
+      if (isRemoteMode()) {
+        refs.playerCountInput.value = String(state.players.length || 0);
+        refs.newGameBtn.textContent = state.gameStarted ? "Restart Shared Game" : "Start Shared Game";
+        refs.newGameBtn.disabled = !isTeacher() || !state.players.length || session.writeInProgress;
+        if (!state.players.length) {
+          refs.setupRows.innerHTML = `<div class="note-card"><strong>No players have joined yet.</strong><br>Students will appear here after they open the room link or enter the room code.</div>`;
+          return;
+        }
+        refs.setupRows.innerHTML = state.players.map((player, index) => `
+          <div class="setup-player-row">
+            <div class="field">
+              <label>Joined Player ${index + 1}</label>
+              <input type="text" value="${player.name}" readonly>
+            </div>
+            <div class="field">
+              <label>Connection</label>
+              <input type="text" value="${player.isConnected ? "Connected" : "Disconnected"}" readonly>
+            </div>
+          </div>
+        `).join("");
+        return;
+      }
+
+      refs.newGameBtn.textContent = "Start Game";
+      refs.newGameBtn.disabled = session.writeInProgress;
+      ensureSetupPlayers();
+      for (let index = 0; index < setupState.count; index += 1) {
+        const player = setupState.players[index];
+        const row = document.createElement("div");
+        row.className = "setup-player-row";
+        row.innerHTML = `
+          <div class="field">
+            <label for="setup-name-${index}">Player ${index + 1} Name</label>
+            <input id="setup-name-${index}" type="text" value="${player.name}">
+          </div>
+          <div class="field">
+            <label for="setup-color-${index}">Token Color</label>
+            <input id="setup-color-${index}" type="color" value="${player.color}">
+          </div>
+        `;
+        refs.setupRows.appendChild(row);
+      }
+    }
+
+    function buildBoardZones() {
+      refs.boardOverlay.innerHTML = "";
+      TILES.forEach((tile) => {
+        const zone = document.createElement("button");
+        zone.type = "button";
+        zone.className = "tile-zone";
+        zone.dataset.tileId = String(tile.id);
+        zone.setAttribute("aria-label", "Tile " + tile.id + ": " + tile.name);
+        zone.style.left = tile.left + "%";
+        zone.style.top = tile.top + "%";
+        zone.style.width = tile.width + "%";
+        zone.style.height = tile.height + "%";
+        zone.innerHTML = `<span class="tile-zone__label">${tile.id}. ${tile.name}</span>`;
+        zone.addEventListener("click", async () => {
+          const tileId = tile.id;
+          if (isRemoteMode() && isTeacher()) {
+            await commitGameMutation((target) => {
+              target.inspectedTileId = tileId;
+            }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+            return;
+          }
+          state.inspectedTileId = tileId;
+          render();
+        });
+        refs.boardOverlay.appendChild(zone);
+      });
+    }
+
+    function renderBoardZones() {
+      document.body.classList.toggle("debug-zones", state.debugZones);
+      const activePlayer = currentPlayer();
+      const zones = refs.boardOverlay.querySelectorAll(".tile-zone");
+      zones.forEach((zone) => {
+        const tileId = Number.parseInt(zone.dataset.tileId, 10);
+        zone.classList.toggle("current", Boolean(activePlayer && activePlayer.tile === tileId));
+        zone.classList.toggle("inspected", state.inspectedTileId === tileId);
+      });
+    }
+
+    function renderTokens() {
+      refs.tokenLayer.innerHTML = "";
+      const playersByTile = new Map();
+      state.players.forEach((player, index) => {
+        const tileId = player.tile;
+        if (!playersByTile.has(tileId)) {
+          playersByTile.set(tileId, []);
+        }
+        playersByTile.get(tileId).push({ player, index });
+      });
+      playersByTile.forEach((entries, tileId) => {
+        const tile = TILES[tileId];
+        entries.forEach((entry, slot) => {
+          const anchor = TOKEN_SLOTS[slot % TOKEN_SLOTS.length];
+          const token = document.createElement("div");
+          token.className = "token";
+          token.dataset.name = entry.player.name;
+          token.style.background = entry.player.color;
+          token.style.left = tile.left + tile.width * anchor.x + "%";
+          token.style.top = tile.top + tile.height * anchor.y + "%";
+          if (entry.index === state.currentPlayerIndex) {
+            token.style.boxShadow = "0 0 0 3px rgba(255,255,255,0.9), 0 10px 18px rgba(0, 0, 0, 0.25)";
+          }
+          refs.tokenLayer.appendChild(token);
+        });
+      });
+    }
+
+    function playerMetrics(player) {
+      return `
+        <div class="metric"><span>Wallet</span><strong>${formatMoney(player.wallet)}</strong></div>
+        <div class="metric"><span>Savings</span><strong>${formatMoney(player.savings)}</strong></div>
+        <div class="metric"><span>Giving</span><strong>${player.givingBadges}</strong></div>
+        <div class="metric"><span>Service</span><strong>${player.serviceBadges}</strong></div>
+        <div class="metric"><span>Free Fun</span><strong>${player.freeFunCards}</strong></div>
+        <div class="metric"><span>Smart Saver</span><strong>${player.smartSaverBadges}</strong></div>
+      `;
+    }
+
+    function renderSummary() {
+      const activePlayer = currentPlayer() || {
+        name: isRemoteMode() ? "Waiting for players" : "Scout 1",
+        wallet: GRADE_RULES[state.gradeKey].startingWallet,
+        savings: 0,
+        tile: 0
+      };
+      refs.boardStatus.textContent = state.statusMessage;
+      refs.tileInfo.textContent = tileDescription(TILES[state.inspectedTileId] || TILES[0]);
+      refs.summaryPlayer.textContent = activePlayer.name;
+      refs.summaryDice.textContent = state.diceResult == null ? "-" : String(state.diceResult);
+      refs.summaryWallet.textContent = formatMoney(activePlayer.wallet);
+      refs.summarySavings.textContent = formatMoney(activePlayer.savings);
+      refs.summaryGoal.textContent = formatMoney(getGoal());
+      refs.summaryGrade.textContent = state.gradeKey;
+      refs.summaryTile.textContent = TILES[activePlayer.tile] ? TILES[activePlayer.tile].name : "Start / Allowance";
+      refs.teacherModeBadge.textContent = state.teacherMode ? "Teacher Mode On" : "Teacher Mode Off";
+      refs.classroomModeBadge.textContent = state.classroomMode ? "Classroom Mode On" : "Classroom Mode Off";
+      refs.teacherModeToggle.checked = state.teacherMode;
+      refs.classroomModeToggle.checked = state.classroomMode;
+      refs.teacherModeToggle.disabled = !isTeacher() || session.writeInProgress;
+      refs.classroomModeToggle.disabled = !isTeacher() || session.writeInProgress;
+      refs.rollDiceBtn.disabled = !canRollDice();
+      refs.endTurnBtn.disabled = !canEndTurn();
+    }
+
+    function renderCurrentPlayerCard() {
+      if (!state.players.length) {
+        refs.currentPlayerCard.innerHTML = `<div class="note-card"><strong>${isRemoteMode() ? "Waiting for students" : "Ready to start"}</strong><br>${isRemoteMode() ? "Players will appear here after they join the shared room." : "Use the Setup tab to begin the local practice game."}</div>`;
+        return;
+      }
+      const player = currentPlayer();
+      const goal = getGoal();
+      const progress = Math.min(100, Math.round((player.savings / goal) * 100));
+      refs.currentPlayerCard.innerHTML = `
+        <div class="current-player-header">
+          <strong><span class="color-chip" style="background:${player.color};"></span>${player.name}</strong>
+          <span class="pill">${TILES[player.tile].name}</span>
+        </div>
+        <div class="player-metrics">${playerMetrics(player)}</div>
+        <div class="progress-track"><div class="progress-fill" style="width:${progress}%;"></div></div>
+        <div class="badge-row">
+          <span class="badge">Goal Progress: ${progress}%</span>
+          <span class="badge">Coupon: ${player.nextBuyDiscount ? formatMoney(player.nextBuyDiscount) : "None"}</span>
+          <span class="badge">Skipped Want Before: ${player.skippedWant ? "Yes" : "No"}</span>
+          <span class="badge">${player.isConnected ? "Connected" : "Disconnected"}</span>
+        </div>
+        <p class="tiny-note">Phase: ${state.phase.replace(/_/g, " ")}. Only savings count toward the win.</p>
+      `;
+    }
+
+    function renderPlayerList() {
+      if (!state.players.length) {
+        refs.playerList.innerHTML = `<div class="history-empty">${isRemoteMode() ? "No students have joined this room yet." : "Player cards will appear here after you start a local game."}</div>`;
+        return;
+      }
+      refs.playerList.innerHTML = "";
+      state.players.forEach((player, index) => {
+        const goalGap = Math.max(0, getGoal() - player.savings);
+        const progress = Math.min(100, Math.round((player.savings / getGoal()) * 100));
+        const card = document.createElement("div");
+        card.className = "player-card" + (index === state.currentPlayerIndex ? " current" : "");
+        card.innerHTML = `
+          <div class="player-card-header">
+            <div class="player-title"><span class="color-chip" style="background:${player.color};"></span><strong>${player.name}</strong></div>
+            <span class="pill">${TILES[player.tile].name}</span>
+          </div>
+          <div class="player-metrics">${playerMetrics(player)}</div>
+          <div class="progress-track"><div class="progress-fill" style="width:${progress}%;"></div></div>
+          <div class="badge-row">
+            <span class="badge">Tile ${player.tile}</span>
+            <span class="badge">Goal Progress: ${progress}%</span>
+            <span class="badge">Need to Goal: ${formatMoney(goalGap)}</span>
+            <span class="badge">Coupon: ${player.nextBuyDiscount ? formatMoney(player.nextBuyDiscount) : "None"}</span>
+            <span class="badge">Skipped Want: ${player.skippedWant ? "Yes" : "No"}</span>
+            <span class="badge">${player.isConnected ? "Connected" : "Disconnected"}</span>
+          </div>
+          ${state.teacherMode && canUseTeacherTools() ? `
+            <div class="quick-edit-row teacher-only">
+              <button class="teacher-action" type="button" data-quick-edit="wallet10" data-player-index="${index}">+$10 Wallet</button>
+              <button class="teacher-action" type="button" data-quick-edit="wallet50" data-player-index="${index}">+$50 Wallet</button>
+              <button class="teacher-action" type="button" data-quick-edit="savings50" data-player-index="${index}">+$50 Savings</button>
+              <button class="teacher-action" type="button" data-quick-edit="giving" data-player-index="${index}">Add Giving Badge</button>
+              <button class="teacher-action" type="button" data-quick-edit="service" data-player-index="${index}">Add Service Badge</button>
+            </div>
+          ` : ""}
+        `;
+        refs.playerList.appendChild(card);
+      });
+    }
+
+    function renderRoomBanner() {
+      const showBanner = session.mode !== "gate";
+      refs.roomBanner.classList.toggle("is-hidden", !showBanner);
+      if (!showBanner) {
+        return;
+      }
+      const modeLabel = isRemoteMode() ? "Live Room" : "Local Practice";
+      const roomCodeText = isRemoteMode() ? state.roomCode || session.roomCode || "-" : "Local Only";
+      refs.bannerModeBadge.textContent = modeLabel;
+      refs.bannerRoomCode.textContent = "Room Code: " + roomCodeText;
+      refs.bannerRole.textContent = "Role: " + (isTeacher() ? "Teacher" : isStudent() ? "Student" : "Viewer");
+      refs.bannerConnection.textContent = "Connection: " + (isRemoteMode() ? session.connectionLabel : "Local Practice");
+      refs.shareLinkOutput.value = isRemoteMode() ? buildShareLink(roomCodeText) : "Local Practice Mode does not use a room link.";
+      refs.copyStudentLinkBtn.disabled = !isRemoteMode();
+      refs.copyRoomCodeBtn.disabled = !isRemoteMode();
+      refs.leaveRoomBtn.textContent = isRemoteMode() ? "Leave Room" : "Exit Local Practice";
+      if (state.roomLocked) {
+        refs.roomBannerNote.textContent = "This room is locked. Students and viewers can still watch, but normal game actions are paused until the teacher restarts or unlocks class play.";
+      } else if (isViewer()) {
+        refs.roomBannerNote.textContent = "Viewer mode is watch-only. You can see the board, players, modal cards, and history without changing the shared game.";
+      } else if (isRemoteMode()) {
+        refs.roomBannerNote.textContent = "Only names, colors, badge counts, and game progress are stored. No student email or login is required.";
+      } else {
+        refs.roomBannerNote.textContent = "Local Practice Mode keeps everything on this device only. It does not sync across devices.";
+      }
+    }
+
+    function renderTeacherPanel() {
+      const selectedIndex = clamp(state.teacherPlayerIndex, 0, Math.max(0, state.players.length - 1));
+      state.teacherPlayerIndex = selectedIndex;
+      const teacherEnabled = canUseTeacherTools();
+      const teacherVisible = state.teacherMode && teacherEnabled;
+      refs.teacherToolsShell.dataset.teacherVisible = String(teacherVisible);
+      refs.teacherModeStatusBadge.textContent = state.teacherMode ? "Teacher Mode On" : "Teacher Mode Off";
+      refs.teacherVisibilityNote.textContent = teacherEnabled
+        ? (state.teacherMode ? "Teacher Mode is on. Overrides and alignment tools are visible." : "Turn on Teacher Mode to show override tools.")
+        : "Teacher tools are only available to the local teacher or the live room host.";
+
+      const playerOptions = state.players
+        .map((player, index) => `<option value="${index}" ${index === selectedIndex ? "selected" : ""}>${player.name}</option>`)
+        .join("");
+      refs.teacherPlayerSelect.innerHTML = playerOptions;
+      refs.deckTargetSelect.innerHTML = playerOptions;
+      refs.manualWinnerSelect.innerHTML = playerOptions;
+      refs.teacherTileSelect.innerHTML = TILES.map((tile) => `<option value="${tile.id}">${tile.id}. ${tile.name}</option>`).join("");
+
+      const teacherPlayer = selectedTeacherPlayer();
+      if (teacherPlayer) {
+        refs.teacherWalletInput.value = String(teacherPlayer.wallet);
+        refs.teacherSavingsInput.value = String(teacherPlayer.savings);
+        refs.teacherTileSelect.value = String(teacherPlayer.tile);
+        refs.deckTargetSelect.value = String(selectedIndex);
+        refs.manualWinnerSelect.value = String(state.winnerIndex == null ? selectedIndex : state.winnerIndex);
+      }
+
+      refs.teacherPlayerSelect.disabled = !teacherEnabled || !state.players.length;
+      refs.teacherWalletInput.disabled = !teacherEnabled || !teacherPlayer;
+      refs.teacherSavingsInput.disabled = !teacherEnabled || !teacherPlayer;
+      refs.teacherTileSelect.disabled = !teacherEnabled || !teacherPlayer;
+      refs.teacherDeckSelect.disabled = !teacherEnabled || !state.players.length;
+      refs.debugToggle.checked = state.debugZones;
+      refs.debugToggle.disabled = !teacherEnabled;
+      refs.lockRoomBtn.disabled = !isRemoteMode() || !teacherEnabled;
+      refs.deleteRoomBtn.disabled = !isRemoteMode() || !teacherEnabled;
+      refs.resetAllDecksBtn.disabled = !teacherEnabled;
+    }
+
+    function renderTabs() {
+      document.body.classList.toggle("teacher-mode-on", state.teacherMode);
+      document.body.classList.toggle("classroom-mode", state.classroomMode);
+      refs.tabButtons.forEach((button) => {
+        const isActive = button.dataset.tab === state.activeTab;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+      });
+      refs.tabPanels.forEach((panel) => {
+        panel.classList.toggle("is-active", panel.dataset.tabPanel === state.activeTab);
+      });
+    }
+
+    function renderHistory() {
+      const previewItems = state.history.slice(0, 4);
+      refs.boardHistoryPreview.innerHTML = previewItems.length
+        ? previewItems.map((entry) => `
+            <div class="history-item">
+              <span>${new Date(entry.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
+              <div>${entry.message}</div>
+            </div>
+          `).join("")
+        : `<div class="history-empty">History will appear here after the first action.</div>`;
+      refs.historyList.innerHTML = state.history.length
+        ? state.history.map((entry) => `
+            <div class="history-item">
+              <span>${new Date(entry.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
+              <div>${entry.message}</div>
+            </div>
+          `).join("")
+        : `<div class="history-empty">No turns logged yet. Start a game and take an action to build the class timeline.</div>`;
+      refs.clearHistoryBtn.disabled = !canUseTeacherTools();
+    }
+
+    function renderDecks() {
+      refs.deckList.innerHTML = DECK_KEYS.map((deckKey) => {
+        const deck = state.decks[deckKey] || { drawPile: [], discardPile: [] };
+        const isBuy = deckKey === "buy";
+        return `
+          <section class="deck-card">
+            <h3>${DECK_TITLES[deckKey]} Deck</h3>
+            <div class="deck-stats">
+              <span class="pill">Draw Pile: ${deck.drawPile.length}</span>
+              <span class="pill">Discard: ${deck.discardPile.length}</span>
+            </div>
+            <div class="deck-actions">
+              <button class="button button-primary" type="button" data-deck-action="${isBuy ? "draw4" : "draw"}" data-deck-key="${deckKey}" ${!canUseTeacherTools() ? "disabled" : ""}>
+                ${isBuy ? "Draw 4 Buy Cards" : "Draw Card"}
+              </button>
+              <button class="button button-neutral" type="button" data-deck-action="shuffle" data-deck-key="${deckKey}" ${!canUseTeacherTools() ? "disabled" : ""}>Shuffle Deck</button>
+            </div>
+          </section>
+        `;
+      }).join("");
+    }
+
+    function renderReflection() {
+      refs.reflectionPrompt.textContent = state.reflectionQuestion;
+      refs.randomReflectionBtn.disabled = !isTeacher() || session.writeInProgress;
+    }
+
+    function renderEndGameSummary() {
+      const summaryIndex = state.winnerIndex != null ? state.winnerIndex : getLeadingPlayerIndex();
+      if (summaryIndex == null) {
+        refs.endGameSummary.innerHTML = `<div class="history-empty">Start a game to build an end-game summary.</div>`;
+        return;
+      }
+      const player = state.players[summaryIndex];
+      const summaryTitle = state.winnerIndex != null
+        ? player.name + " is the winner."
+        : state.gameEndedEarly
+          ? "Game ended early."
+          : player.name + " is leading right now.";
+      refs.endGameSummary.innerHTML = `
+        <div class="summary-card">
+          <strong>${summaryTitle}</strong>
+          <div class="summary-list">
+            <div class="metric"><span>Final Savings</span><strong>${formatMoney(player.savings)}</strong></div>
+            <div class="metric"><span>Final Wallet</span><strong>${formatMoney(player.wallet)}</strong></div>
+            <div class="metric"><span>Giving Badges</span><strong>${player.givingBadges}</strong></div>
+            <div class="metric"><span>Service Badges</span><strong>${player.serviceBadges}</strong></div>
+            <div class="metric"><span>Smart Saver Badges</span><strong>${player.smartSaverBadges}</strong></div>
+          </div>
+        </div>
+        <div class="note-card">
+          <strong>Class Reflection Questions</strong>
+          “What helped you save money the fastest?”<br>
+          “What choice made your budget harder?”<br>
+          “What would you do differently next time?”
+        </div>
+      `;
+    }
+
+    function setLocalModal(modal) {
+      localModal = modal;
+      renderModal();
+    }
+
+    function closeLocalModal() {
+      localModal = null;
+      renderModal();
+    }
+
+    function setSharedModal(target, modal) {
+      target.activeModal = {
+        isOpen: true,
+        closable: Boolean(modal.closable),
+        ...modal
+      };
+    }
+
+    function clearSharedModal(target) {
+      target.activeModal = null;
+    }
+
+    function renderModal() {
+      const modal = localModal || state.activeModal;
+      if (!modal || !modal.isOpen) {
+        refs.modalBackdrop.classList.add("is-hidden");
+        refs.modalBackdrop.setAttribute("aria-hidden", "true");
+        refs.modalBody.innerHTML = "";
+        refs.modalActions.innerHTML = "";
+        return;
+      }
+      const isLocal = Boolean(localModal);
+      refs.modalShell.dataset.deck = modal.deckKey || "allowance";
+      refs.modalTag.dataset.deck = modal.deckKey || "allowance";
+      refs.modalTag.textContent = modal.tagLabel || DECK_LABELS[modal.deckKey] || "Card";
+      refs.modalTitle.textContent = modal.title || "Card";
+      refs.modalPrompt.textContent = modal.prompt || "";
+      refs.modalMeta.innerHTML = "";
+      (modal.meta || []).filter(Boolean).forEach((item) => {
+        const pill = document.createElement("span");
+        pill.className = "pill";
+        pill.textContent = item;
+        refs.modalMeta.appendChild(pill);
+      });
+      refs.modalBody.innerHTML = modal.bodyHtml || "";
+      refs.modalActions.innerHTML = "";
+      (modal.actions || []).forEach((action) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "button " + (action.variant || "button-secondary");
+        button.textContent = action.label;
+        const sharedDisabled = !isLocal && (!canResolveModal(modal) || Boolean(action.disabled) || session.writeInProgress);
+        button.disabled = isLocal ? Boolean(action.disabled) : sharedDisabled;
+        button.dataset.actionKey = action.key;
+        button.dataset.modalScope = isLocal ? "local" : "shared";
+        refs.modalActions.appendChild(button);
+      });
+      refs.modalClose.hidden = isLocal ? !modal.closable : !(modal.closable && canResolveModal(modal));
+      refs.modalClose.onclick = () => {
+        if (isLocal) {
+          closeLocalModal();
+        } else if (modal.closable && canResolveModal(modal)) {
+          commitGameMutation((target) => {
+            clearSharedModal(target);
+          }, { requireCurrentResolver: true, allowWhenLocked: true });
+        }
+      };
+      refs.modalBackdrop.classList.remove("is-hidden");
+      refs.modalBackdrop.setAttribute("aria-hidden", "false");
+
+      refs.modalActions.querySelectorAll("[data-modal-scope='local']").forEach((button) => {
+        button.addEventListener("click", () => {
+          resolveLocalModalAction(button.dataset.actionKey);
+        });
+      });
+      refs.modalActions.querySelectorAll("[data-modal-scope='shared']").forEach((button) => {
+        button.addEventListener("click", () => {
+          resolveSharedModalAction(button.dataset.actionKey);
+        });
+      });
+
+      if (!isLocal && modal.modalType === "buy") {
+        refs.modalBody.querySelectorAll("[data-buy-index]").forEach((button) => {
+          button.disabled = button.disabled || !canResolveModal(modal) || session.writeInProgress;
+          button.addEventListener("click", () => {
+            resolveBuyChoice(Number.parseInt(button.dataset.buyIndex, 10), false);
+          });
+        });
+        refs.modalBody.querySelectorAll("[data-fun-index]").forEach((button) => {
+          button.disabled = button.disabled || !canResolveModal(modal) || session.writeInProgress;
+          button.addEventListener("click", () => {
+            resolveBuyChoice(Number.parseInt(button.dataset.funIndex, 10), true);
+          });
+        });
+      }
+    }
+
+    function resolveLocalModalAction(actionKey) {
+      if (!localModal) {
+        return;
+      }
+      if (actionKey === "close-help" || actionKey === "close-leader") {
+        closeLocalModal();
+      }
+    }
+
+    function buildPaymentActionsData(target, deckKey, cards, playerIndex, amount, itemTitle) {
+      const player = target.players[playerIndex];
+      const actions = [];
+      if (player.wallet >= amount) {
+        actions.push({ key: "pay-wallet", label: "Pay " + formatMoney(amount) + " from Wallet", variant: "button-primary", kind: "payment", strategy: "wallet", amount, itemTitle });
+      }
+      if (player.wallet < amount && player.wallet + player.savings >= amount) {
+        actions.push({ key: "pay-wallet-savings", label: "Use Wallet + Savings", variant: "button-secondary", kind: "payment", strategy: "wallet-savings", amount, itemTitle });
+      }
+      if (player.wallet > 0 && player.wallet < amount) {
+        actions.push({ key: "pay-wallet-partial", label: "Pay What You Can (" + formatMoney(player.wallet) + ")", variant: "button-neutral", kind: "payment", strategy: "wallet-partial", amount, itemTitle });
+      }
+      if (player.wallet === 0 && player.savings >= amount) {
+        actions.push({ key: "pay-savings-full", label: "Pay " + formatMoney(amount) + " from Savings", variant: "button-neutral", kind: "payment", strategy: "savings-full", amount, itemTitle });
+      }
+      if (player.wallet + player.savings < amount && player.savings > 0) {
+        actions.push({ key: "pay-savings-partial", label: "Use Savings Too (" + formatMoney(player.savings) + ")", variant: "button-neutral", kind: "payment", strategy: "savings-partial", amount, itemTitle });
+      }
+      actions.push({ key: "ask-teacher", label: "Ask Teacher for Help", variant: "button-danger", kind: "skip", message: player.name + " asked the teacher for help with " + itemTitle + "." });
+      return actions;
+    }
+
+    function buildBuyBodyHtml(player, cards, discount) {
+      return `
+        <div class="choice-grid">
+          ${cards.map((card, index) => {
+            const finalCost = Math.max(0, card.amount - discount);
+            return `
+              <div class="choice-card">
+                <div class="choice-tags">
+                  <span class="pill">${card.tag}</span>
+                  <span class="pill">${formatMoney(card.amount)}</span>
+                  ${discount ? `<span class="pill">Coupon: -${formatMoney(discount)}</span>` : ""}
+                </div>
+                <h4>${card.title}</h4>
+                <p>${card.prompt}</p>
+                <button class="choice-button" data-buy-index="${index}" ${finalCost > player.wallet ? "disabled" : ""}>
+                  Buy for ${formatMoney(finalCost)}
+                </button>
+                ${player.freeFunCards > 0 && card.tag === "Want" ? `<button class="choice-button secondary" data-fun-index="${index}">Use 1 Free Fun Card</button>` : ""}
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function presentAllowanceCard(target, playerIndex, source) {
+      const card = drawCards(target, "allowance", 1)[0];
+      const player = target.players[playerIndex];
+      setSharedModal(target, {
+        deckKey: "allowance",
+        modalType: "simple",
+        playerIndex,
+        cardData: card,
+        cardsToDiscard: [card],
+        title: card.title,
+        meta: [source, "Collect " + formatMoney(card.amount)],
+        prompt: card.prompt,
+        actions: [
+          { key: "collect", label: "Collect " + formatMoney(card.amount), variant: "button-primary", kind: "gain-wallet", amount: card.amount, message: player.name + " collected " + formatMoney(card.amount) + " from " + card.title + "." }
+        ]
+      });
+    }
+
+    function presentChoreCard(target, playerIndex) {
+      const card = drawCards(target, "chore", 1)[0];
+      const player = target.players[playerIndex];
+      setSharedModal(target, {
+        deckKey: "chore",
+        modalType: "simple",
+        playerIndex,
+        cardData: card,
+        cardsToDiscard: [card],
+        title: card.title,
+        meta: ["Earn " + formatMoney(card.amount)],
+        prompt: card.prompt,
+        actions: [
+          { key: "earn", label: "Earn " + formatMoney(card.amount), variant: "button-primary", kind: "gain-wallet", amount: card.amount, message: player.name + " earned " + formatMoney(card.amount) + " from " + card.title + "." }
+        ]
+      });
+    }
+
+    function presentNeedCard(target, playerIndex) {
+      const card = drawCards(target, "need", 1)[0];
+      const player = target.players[playerIndex];
+      setSharedModal(target, {
+        deckKey: "need",
+        modalType: "payment",
+        playerIndex,
+        cardData: card,
+        cardsToDiscard: [card],
+        title: card.title,
+        meta: ["Need", "Pay " + formatMoney(card.amount)],
+        prompt: card.prompt + " No loans, debt, or bankruptcy here.",
+        bodyHtml: `
+          <div class="modal-payment-box">
+            <div class="player-metrics">
+              <div class="metric"><span>Wallet</span><strong>${formatMoney(player.wallet)}</strong></div>
+              <div class="metric"><span>Savings</span><strong>${formatMoney(player.savings)}</strong></div>
+            </div>
+          </div>
+        `,
+        actions: buildPaymentActionsData(target, "need", [card], playerIndex, card.amount, card.title)
+      });
+    }
+
+    function presentSellCard(target, playerIndex) {
+      const player = target.players[playerIndex];
+      const card = drawCards(target, "sell", 1)[0];
+      if (card.slug === "old-clothes-choice") {
+        setSharedModal(target, {
+          deckKey: "sell",
+          modalType: "choice",
+          playerIndex,
+          cardData: card,
+          cardsToDiscard: [card],
+          title: card.title,
+          meta: ["Earn " + formatMoney(card.amount), "Or Give"],
+          prompt: card.prompt,
+          actions: [
+            { key: "sell-earn", label: "Earn " + formatMoney(card.amount), variant: "button-primary", kind: "gain-wallet", amount: card.amount, message: player.name + " earned " + formatMoney(card.amount) + " by selling old clothes." },
+            { key: "sell-donate", label: "Donate and Gain 1 Giving Badge", variant: "button-secondary", kind: "gain-badge", field: "givingBadges", amount: 1, message: player.name + " donated old clothes and gained 1 Giving Badge." }
+          ]
+        });
+        return;
+      }
+      setSharedModal(target, {
+        deckKey: "sell",
+        modalType: "simple",
+        playerIndex,
+        cardData: card,
+        cardsToDiscard: [card],
+        title: card.title,
+        meta: ["Earn " + formatMoney(card.amount)],
+        prompt: card.prompt,
+        actions: [
+          { key: "sell-collect", label: "Earn " + formatMoney(card.amount), variant: "button-primary", kind: "gain-wallet", amount: card.amount, message: player.name + " earned " + formatMoney(card.amount) + " from " + card.title + "." }
+        ]
+      });
+    }
+
+    function presentGivingCard(target, playerIndex) {
+      const player = target.players[playerIndex];
+      const card = drawCards(target, "giving", 1)[0];
+      const actions = [];
+      if (card.slug === "donate-clothes") {
+        actions.push({ key: "give-badge", label: "Gain 1 Giving Badge", variant: "button-primary", kind: "gain-badge", field: "givingBadges", amount: 1, message: player.name + " gained 1 Giving Badge by donating old clothes." });
+      }
+      if (card.slug === "give-25") {
+        actions.push({ key: "give-25", label: "Give " + formatMoney(card.amount), variant: "button-primary", kind: "spend-and-badge", cost: card.amount, field: "givingBadges", amount: 1, disabled: player.wallet < card.amount, message: player.name + " gave " + formatMoney(card.amount) + " and gained 1 Giving Badge." });
+      }
+      if (card.slug === "help-neighbor") {
+        actions.push({ key: "service-neighbor", label: "Gain 1 Service Badge", variant: "button-primary", kind: "gain-badge", field: "serviceBadges", amount: 1, message: player.name + " gained 1 Service Badge for helping a neighbor." });
+      }
+      if (card.slug === "donate-supplies") {
+        actions.push({ key: "supplies-pay", label: "Pay " + formatMoney(card.amount) + " and Gain 1 Giving Badge", variant: "button-primary", kind: "spend-and-badge", cost: card.amount, field: "givingBadges", amount: 1, disabled: player.wallet < card.amount, message: player.name + " donated supplies, spent " + formatMoney(card.amount) + ", and gained 1 Giving Badge." });
+        actions.push({ key: "supplies-honor", label: "Gain 1 Giving Badge", variant: "button-secondary", kind: "gain-badge", field: "givingBadges", amount: 1, message: player.name + " honored a generous donation and gained 1 Giving Badge." });
+      }
+      if (card.slug === "thank-you-card") {
+        actions.push({ key: "service-thanks", label: "Gain 1 Service Badge", variant: "button-primary", kind: "gain-badge", field: "serviceBadges", amount: 1, message: player.name + " gained 1 Service Badge for making a thank-you card." });
+      }
+      if (card.slug === "food-pantry") {
+        actions.push({ key: "service-food", label: "Gain 1 Service Badge", variant: "button-primary", kind: "gain-badge", field: "serviceBadges", amount: 1, message: player.name + " gained 1 Service Badge for helping at a food pantry." });
+      }
+      if (card.slug === "donate-toy") {
+        actions.push({ key: "toy-pay", label: "Pay " + formatMoney(card.amount) + " and Gain 1 Giving Badge", variant: "button-primary", kind: "spend-and-badge", cost: card.amount, field: "givingBadges", amount: 1, disabled: player.wallet < card.amount, message: player.name + " donated a toy, paid " + formatMoney(card.amount) + ", and gained 1 Giving Badge." });
+        actions.push({ key: "toy-badge", label: "Gain 1 Giving Badge", variant: "button-secondary", kind: "gain-badge", field: "givingBadges", amount: 1, message: player.name + " donated a toy and gained 1 Giving Badge." });
+      }
+      if (card.slug === "clean-park") {
+        actions.push({ key: "service-park", label: "Gain 1 Service Badge", variant: "button-primary", kind: "gain-badge", field: "serviceBadges", amount: 1, message: player.name + " gained 1 Service Badge for helping clean a park." });
+      }
+      if (card.slug === "give-10") {
+        actions.push({ key: "give-10", label: "Give " + formatMoney(card.amount) + " and Gain 1 Giving Badge", variant: "button-primary", kind: "spend-and-badge", cost: card.amount, field: "givingBadges", amount: 1, disabled: player.wallet < card.amount, message: player.name + " gave " + formatMoney(card.amount) + " and gained 1 Giving Badge." });
+      }
+      if (card.slug === "save-or-give") {
+        actions.push({ key: "save-keep", label: "Keep Saving", variant: "button-secondary", kind: "skip", message: player.name + " chose to keep saving this turn." });
+        actions.push({ key: "save-give", label: "Give " + formatMoney(card.amount), variant: "button-primary", kind: "spend-and-badge", cost: card.amount, field: "givingBadges", amount: 1, disabled: player.wallet < card.amount, message: player.name + " gave " + formatMoney(card.amount) + " and gained 1 Giving Badge." });
+      }
+      actions.push({ key: "give-skip", label: "Skip Kindly", variant: "button-neutral", kind: "skip", message: player.name + " chose to skip this giving chance kindly." });
+      setSharedModal(target, {
+        deckKey: "giving",
+        modalType: "choice",
+        playerIndex,
+        cardData: card,
+        cardsToDiscard: [card],
+        title: card.title,
+        meta: ["Giving is optional", card.amount ? formatMoney(card.amount) : null],
+        prompt: card.prompt,
+        actions
+      });
+    }
+
+    function presentBankCard(target, playerIndex) {
+      const player = target.players[playerIndex];
+      const card = drawCards(target, "bank", 1)[0];
+      const suggestedAmount = (() => {
+        if (card.slug === "save-50-badge") return Math.min(player.wallet, 50);
+        if (card.slug === "save-100-bonus") return Math.min(player.wallet, 100);
+        if (card.slug === "half-wallet") return Math.ceil(player.wallet / 2);
+        if (card.slug === "rainy-day") return Math.min(player.wallet, 25);
+        return Math.min(player.wallet, 25);
+      })();
+      setSharedModal(target, {
+        deckKey: "bank",
+        modalType: "bank",
+        playerIndex,
+        cardData: card,
+        cardsToDiscard: [card],
+        title: card.title,
+        meta: ["Wallet " + formatMoney(player.wallet), "Savings " + formatMoney(player.savings)],
+        prompt: card.prompt,
+        bodyHtml: `
+          <div class="modal-bank-box">
+            <div class="field">
+              <label for="bankDepositInput">Deposit Amount</label>
+              <input id="bankDepositInput" type="number" min="0" max="${player.wallet}" step="1" value="${suggestedAmount}">
+            </div>
+            <div class="bank-helper">
+              <span class="pill">Goal: ${formatMoney(getGoal(target))}</span>
+              <span class="pill">You need ${formatMoney(Math.max(0, getGoal(target) - player.savings))} more to win</span>
+            </div>
+          </div>
+        `,
+        actions: [
+          { key: "bank-deposit", label: "Deposit Selected Amount", variant: "button-primary", kind: "bank-deposit", disabled: player.wallet <= 0 },
+          { key: "bank-fill-all", label: "Deposit All Wallet Money", variant: "button-secondary", kind: "bank-fill-all", disabled: player.wallet <= 0 },
+          { key: "bank-keep", label: "Keep Wallet for Now", variant: "button-neutral", kind: "skip", message: player.name + " checked the bank and kept wallet money for now." }
+        ]
+      });
+    }
+
+    function presentBuyCards(target, playerIndex) {
+      const player = target.players[playerIndex];
+      const cards = drawCards(target, "buy", 4);
+      const discount = player.nextBuyDiscount;
+      setSharedModal(target, {
+        deckKey: "buy",
+        modalType: "buy",
+        playerIndex,
+        cardChoices: cards,
+        cardsToDiscard: cards,
+        discount,
+        title: "Choose One Buy Card",
+        meta: ["4 choices", discount ? "Coupon ready: " + formatMoney(discount) : "No coupon"],
+        prompt: "Buy one item if it fits your wallet, or skip all to protect your budget.",
+        bodyHtml: buildBuyBodyHtml(player, cards, discount),
+        actions: [
+          { key: "buy-skip", label: "Skip All", variant: "button-neutral", kind: "skip-buy" }
+        ]
+      });
+    }
+
+    function presentSurpriseCard(target, playerIndex) {
+      const player = target.players[playerIndex];
+      const card = drawCards(target, "surprise", 1)[0];
+      if (["lost-water-bottle", "bike-repair", "forgot-lunch", "replacement-pencils"].includes(card.slug)) {
+        setSharedModal(target, {
+          deckKey: "surprise",
+          modalType: "payment",
+          playerIndex,
+          cardData: card,
+          cardsToDiscard: [card],
+          title: card.title,
+          meta: ["Pay " + formatMoney(card.amount)],
+          prompt: card.prompt,
+          bodyHtml: `
+            <div class="modal-payment-box">
+              <div class="player-metrics">
+                <div class="metric"><span>Wallet</span><strong>${formatMoney(player.wallet)}</strong></div>
+                <div class="metric"><span>Savings</span><strong>${formatMoney(player.savings)}</strong></div>
+              </div>
+            </div>
+          `,
+          actions: buildPaymentActionsData(target, "surprise", [card], playerIndex, card.amount, card.title)
+        });
+        return;
+      }
+      if (card.slug === "found-birthday-money") {
+        setSharedModal(target, {
+          deckKey: "surprise",
+          modalType: "simple",
+          playerIndex,
+          cardData: card,
+          cardsToDiscard: [card],
+          title: card.title,
+          meta: ["Collect " + formatMoney(card.amount)],
+          prompt: card.prompt,
+          actions: [
+            { key: "surprise-collect", label: "Collect " + formatMoney(card.amount), variant: "button-primary", kind: "gain-wallet", amount: card.amount, message: player.name + " collected " + formatMoney(card.amount) + " from a surprise birthday find." }
+          ]
+        });
+        return;
+      }
+      if (card.slug === "fundraiser") {
+        setSharedModal(target, {
+          deckKey: "surprise",
+          modalType: "choice",
+          playerIndex,
+          cardData: card,
+          cardsToDiscard: [card],
+          title: card.title,
+          meta: ["Choice", formatMoney(card.amount)],
+          prompt: card.prompt,
+          actions: [
+            { key: "fundraiser-give", label: "Give " + formatMoney(card.amount), variant: "button-primary", kind: "spend-and-badge", cost: card.amount, field: "givingBadges", amount: 1, disabled: player.wallet < card.amount, message: player.name + " gave " + formatMoney(card.amount) + " to the fundraiser and gained 1 Giving Badge." },
+            { key: "fundraiser-skip", label: "Skip This Time", variant: "button-neutral", kind: "skip", message: player.name + " skipped the fundraiser surprise." }
+          ]
+        });
+        return;
+      }
+      if (card.slug === "coupon-day") {
+        setSharedModal(target, {
+          deckKey: "surprise",
+          modalType: "choice",
+          playerIndex,
+          cardData: card,
+          cardsToDiscard: [card],
+          title: card.title,
+          meta: ["Next Buy Discount: " + formatMoney(card.amount)],
+          prompt: card.prompt,
+          actions: [
+            { key: "coupon-save", label: "Save Coupon", variant: "button-primary", kind: "add-discount", amount: card.amount, message: player.name + " saved a " + formatMoney(card.amount) + " coupon for the next Buy card." }
+          ]
+        });
+        return;
+      }
+      if (card.slug === "family-movie-night") {
+        setSharedModal(target, {
+          deckKey: "surprise",
+          modalType: "choice",
+          playerIndex,
+          cardData: card,
+          cardsToDiscard: [card],
+          title: card.title,
+          meta: ["Gain 1 Free Fun Card"],
+          prompt: card.prompt,
+          actions: [
+            { key: "free-fun", label: "Gain Free Fun Card", variant: "button-primary", kind: "gain-badge", field: "freeFunCards", amount: 1, message: player.name + " gained 1 Free Fun Card." }
+          ]
+        });
+        return;
+      }
+      if (card.slug === "helped-someone") {
+        setSharedModal(target, {
+          deckKey: "surprise",
+          modalType: "choice",
+          playerIndex,
+          cardData: card,
+          cardsToDiscard: [card],
+          title: card.title,
+          meta: ["Gain 1 Service Badge"],
+          prompt: card.prompt,
+          actions: [
+            { key: "surprise-service", label: "Gain Service Badge", variant: "button-primary", kind: "gain-badge", field: "serviceBadges", amount: 1, message: player.name + " gained 1 Service Badge from a kind surprise." }
+          ]
+        });
+        return;
+      }
+      if (card.slug === "unexpected-chore") {
+        setSharedModal(target, {
+          deckKey: "surprise",
+          modalType: "simple",
+          playerIndex,
+          cardData: card,
+          cardsToDiscard: [card],
+          title: card.title,
+          meta: ["Earn " + formatMoney(card.amount)],
+          prompt: card.prompt,
+          actions: [
+            { key: "surprise-earn", label: "Earn " + formatMoney(card.amount), variant: "button-primary", kind: "gain-wallet", amount: card.amount, message: player.name + " earned " + formatMoney(card.amount) + " from an unexpected chore." }
+          ]
+        });
+        return;
+      }
+      if (card.slug === "rainy-day-fund-saves-you") {
+        if (player.savings >= 100) {
+          setSharedModal(target, {
+            deckKey: "surprise",
+            modalType: "choice",
+            playerIndex,
+            cardData: card,
+            cardsToDiscard: [card],
+            title: card.title,
+            meta: ["Savings Covered It"],
+            prompt: card.prompt,
+            actions: [
+              { key: "rainy-covered", label: "Pay Nothing", variant: "button-primary", kind: "skip", message: player.name + " had enough savings set aside, so the rainy day fund covered the surprise." }
+            ]
+          });
+        } else {
+          setSharedModal(target, {
+            deckKey: "surprise",
+            modalType: "payment",
+            playerIndex,
+            cardData: card,
+            cardsToDiscard: [card],
+            title: card.title,
+            meta: ["Pay " + formatMoney(card.amount)],
+            prompt: card.prompt,
+            actions: buildPaymentActionsData(target, "surprise", [card], playerIndex, card.amount, card.title)
+          });
+        }
+        return;
+      }
+      if (card.slug === "smart-choice-bonus") {
+        const bonus = player.skippedWant ? 25 : 10;
+        setSharedModal(target, {
+          deckKey: "surprise",
+          modalType: "simple",
+          playerIndex,
+          cardData: card,
+          cardsToDiscard: [card],
+          title: card.title,
+          meta: ["Collect " + formatMoney(bonus)],
+          prompt: card.prompt,
+          actions: [
+            { key: "smart-bonus", label: "Collect Bonus", variant: "button-primary", kind: "gain-wallet", amount: bonus, message: player.name + " collected " + formatMoney(bonus) + " from a smart choice bonus." }
+          ]
+        });
+      }
+    }
+
+    function queueLandingEvents(target, playerIndex, fromTile, roll) {
+      const player = target.players[playerIndex];
+      const landedTile = TILES[player.tile];
+      const passedStart = fromTile + roll >= TILES.length;
+      if (passedStart || player.tile === 0) {
+        target.pendingEvents.push({ deckKey: "allowance", playerIndex, source: passedStart ? "Passed Start / Allowance" : "Landed on Start / Allowance" });
+      }
+      if (player.tile !== 0) {
+        target.pendingEvents.push({ deckKey: landedTile.deck, playerIndex, source: landedTile.name });
+      }
+    }
+
+    function openWinnerModal(target, playerIndex) {
+      const player = target.players[playerIndex];
+      setSharedModal(target, {
+        deckKey: "winner",
+        modalType: "winner",
+        playerIndex,
+        title: player.name + " reached the savings goal!",
+        meta: [formatMoney(player.savings) + " saved", "Goal " + formatMoney(getGoal(target))],
+        prompt: "Only savings count toward the win, and " + player.name + " made it first.",
+        bodyHtml: `
+          <div class="winner-glow">
+            <p><strong>${player.name}</strong> finished with ${formatMoney(player.wallet)} in wallet money and ${formatMoney(player.savings)} in savings.</p>
+            <p>Giving Badges: ${player.givingBadges} | Service Badges: ${player.serviceBadges} | Free Fun Cards: ${player.freeFunCards}</p>
+          </div>
+        `,
+        actions: [
+          { key: "winner-close", label: "Keep Results Visible", variant: "button-neutral", kind: "close-shared", disabled: !isTeacher(), closable: true }
+        ],
+        closable: true
+      });
+    }
+
+    function checkForWinner(target, playerIndex) {
+      if (playerIndex == null || !target.players[playerIndex]) {
+        return false;
+      }
+      if (target.players[playerIndex].savings >= getGoal(target)) {
+        target.winnerIndex = playerIndex;
+        target.gameOver = true;
+        target.phase = "game_over";
+        target.phaseAfterQueue = null;
+        target.pendingEvents = [];
+        setStatus(target, target.players[playerIndex].name + " wins by reaching the savings goal.");
+        openWinnerModal(target, playerIndex);
+        return true;
+      }
+      return false;
+    }
+
+    function finishSharedEvent(target, message, playerIndex) {
+      const modal = target.activeModal;
+      if (modal && modal.cardsToDiscard && modal.cardsToDiscard.length) {
+        discardCards(target, modal.deckKey, modal.cardsToDiscard);
+      }
+      if (message) {
+        setStatus(target, message);
+      }
+      clearSharedModal(target);
+      if (checkForWinner(target, playerIndex)) {
+        return;
+      }
+      processNextEvent(target);
+    }
+
+    function processNextEvent(target) {
+      if (target.activeModal || target.winnerIndex != null) {
+        return;
+      }
+      if (!target.pendingEvents.length) {
+        target.phase = target.phaseAfterQueue || "awaiting_end_turn";
+        target.phaseAfterQueue = null;
+        return;
+      }
+      const event = target.pendingEvents.shift();
+      if (event.deckKey === "allowance") presentAllowanceCard(target, event.playerIndex, event.source);
+      if (event.deckKey === "chore") presentChoreCard(target, event.playerIndex);
+      if (event.deckKey === "buy") presentBuyCards(target, event.playerIndex);
+      if (event.deckKey === "bank") presentBankCard(target, event.playerIndex);
+      if (event.deckKey === "need") presentNeedCard(target, event.playerIndex);
+      if (event.deckKey === "giving") presentGivingCard(target, event.playerIndex);
+      if (event.deckKey === "sell") presentSellCard(target, event.playerIndex);
+      if (event.deckKey === "surprise") presentSurpriseCard(target, event.playerIndex);
+    }
+
+    function runQueuedEvents(target, afterPhase) {
+      target.phase = "resolving";
+      target.phaseAfterQueue = afterPhase;
+      processNextEvent(target);
+    }
+
+    function beginTurn(target) {
+      if (!target.players.length) {
+        target.phase = "idle";
+        return;
+      }
+      target.diceResult = null;
+      target.phase = "awaiting_roll";
+      target.phaseAfterQueue = null;
+      target.pendingEvents = [];
+      target.inspectedTileId = currentPlayer(target).tile;
+      setStatus(target, currentPlayer(target).name + "'s turn. Roll the die when you are ready.");
+      if (currentPlayer(target).turnsTaken === 0 && currentPlayer(target).tile === 0) {
+        target.pendingEvents.push({ deckKey: "allowance", playerIndex: target.currentPlayerIndex, source: "Starting on Start / Allowance" });
+        runQueuedEvents(target, "awaiting_roll");
+      }
+    }
+
+    function resetGameWithPlayers(target, players, gradeKey) {
+      target.gradeKey = gradeKey;
+      target.players = players;
+      target.currentPlayerIndex = 0;
+      target.diceResult = null;
+      target.phase = "idle";
+      target.phaseAfterQueue = null;
+      target.pendingEvents = [];
+      target.activeModal = null;
+      target.winnerIndex = null;
+      target.history = [];
+      target.historyCounter = 0;
+      target.reflectionQuestion = REFLECTION_QUESTIONS[0];
+      target.gameEndedEarly = false;
+      target.inspectedTileId = 0;
+      target.statusMessage = "A new game is ready.";
+      target.decks = createDecks();
+      target.gameStarted = true;
+      target.gameOver = false;
+      target.roomLocked = false;
+      target.resolvingAction = false;
+      beginTurn(target);
+    }
+
+    function buildSharedPlayersForRestart(target) {
+      return target.players.slice(0, 8).map((player, index) => makePlayer({
+        id: player.id,
+        joinOrder: player.joinOrder || index,
+        name: player.name,
+        color: player.color,
+        isConnected: player.isConnected,
+        lastSeen: player.lastSeen
+      }, target.gradeKey));
+    }
+
+    function buildPaymentMessage(playerName, itemTitle, strategy, result) {
+      if (strategy === "wallet") {
+        return playerName + " paid " + formatMoney(result.fromWallet) + " from wallet for " + itemTitle + ".";
+      }
+      if (strategy === "wallet-savings") {
+        return playerName + " covered " + itemTitle + " with " + formatMoney(result.fromWallet) + " from wallet and " + formatMoney(result.fromSavings) + " from savings.";
+      }
+      if (strategy === "wallet-partial") {
+        return playerName + " paid " + formatMoney(result.fromWallet) + " toward " + itemTitle + " and still needs teacher help for " + formatMoney(result.remaining) + ".";
+      }
+      if (strategy === "savings-partial") {
+        return playerName + " used " + formatMoney(result.fromSavings) + " from savings for " + itemTitle + " and still needs teacher help for " + formatMoney(result.remaining) + ".";
+      }
+      return playerName + " used savings to cover " + itemTitle + ".";
+    }
+
+    function applySharedModalAction(target, actionKey, extra = {}) {
+      const modal = target.activeModal;
+      if (!modal || !modal.actions) {
+        return;
+      }
+      const action = modal.actions.find((item) => item.key === actionKey);
+      if (!action) {
+        return;
+      }
+      const playerIndex = modal.playerIndex;
+      const player = target.players[playerIndex];
+
+      if (action.kind === "gain-wallet") {
+        adjustWallet(target, playerIndex, action.amount);
+        finishSharedEvent(target, action.message, playerIndex);
+        return;
+      }
+
+      if (action.kind === "gain-badge") {
+        player[action.field] += action.amount || 1;
+        finishSharedEvent(target, action.message, playerIndex);
+        return;
+      }
+
+      if (action.kind === "spend-and-badge") {
+        adjustWallet(target, playerIndex, -(action.cost || 0));
+        player[action.field] += action.amount || 1;
+        finishSharedEvent(target, action.message, playerIndex);
+        return;
+      }
+
+      if (action.kind === "payment") {
+        const result = coverCost(target, playerIndex, action.amount, action.strategy);
+        finishSharedEvent(target, buildPaymentMessage(player.name, action.itemTitle, action.strategy, result), playerIndex);
+        return;
+      }
+
+      if (action.kind === "add-discount") {
+        player.nextBuyDiscount += action.amount;
+        finishSharedEvent(target, action.message, playerIndex);
+        return;
+      }
+
+      if (action.kind === "bank-fill-all") {
+        return;
+      }
+
+      if (action.kind === "bank-deposit") {
+        const walletBefore = player.wallet;
+        const amount = clamp(Number.parseInt(extra.bankAmount, 10) || 0, 0, walletBefore);
+        const saved = moveWalletToSavings(target, playerIndex, amount);
+        const details = [];
+        if (modal.cardData.slug === "save-50-badge" && saved >= 50) {
+          player.smartSaverBadges += 1;
+          details.push("earned 1 Smart Saver Badge");
+        }
+        if (modal.cardData.slug === "save-100-bonus" && saved >= 100) {
+          adjustSavings(target, playerIndex, 25);
+          details.push("earned a " + formatMoney(25) + " savings bonus");
+        }
+        if (modal.cardData.slug === "half-wallet" && saved >= Math.ceil(walletBefore / 2)) {
+          details.push("met the half-wallet challenge");
+        }
+        if (modal.cardData.slug === "rainy-day" && saved >= 25) {
+          details.push("started a rainy day fund");
+        }
+        const note = details.length ? " and " + details.join(" and ") : "";
+        finishSharedEvent(target, player.name + " moved " + formatMoney(saved) + " into savings" + note + ".", playerIndex);
+        return;
+      }
+
+      if (action.kind === "skip") {
+        finishSharedEvent(target, action.message, playerIndex);
+        return;
+      }
+
+      if (action.kind === "skip-buy") {
+        if ((modal.cardChoices || []).some((card) => card.tag === "Want")) {
+          player.skippedWant = true;
+        }
+        finishSharedEvent(target, player.name + " skipped all four Buy cards to protect the budget.", playerIndex);
+        return;
+      }
+
+      if (action.kind === "close-shared") {
+        clearSharedModal(target);
+        return;
+      }
+    }
+
+    function applyBuyChoice(target, choiceIndex, useFreeFunCard) {
+      const modal = target.activeModal;
+      if (!modal || modal.modalType !== "buy") {
+        return;
+      }
+      const player = target.players[modal.playerIndex];
+      const chosen = modal.cardChoices[choiceIndex];
+      if (!chosen) {
+        return;
+      }
+      if (useFreeFunCard) {
+        if (player.freeFunCards <= 0 || chosen.tag !== "Want") {
+          return;
+        }
+        player.freeFunCards -= 1;
+        finishSharedEvent(target, player.name + " used 1 Free Fun Card for " + chosen.title + ".", modal.playerIndex);
+        return;
+      }
+      const couponValue = player.nextBuyDiscount;
+      const cost = Math.max(0, chosen.amount - couponValue);
+      if (cost > player.wallet) {
+        return;
+      }
+      adjustWallet(target, modal.playerIndex, -cost);
+      player.nextBuyDiscount = 0;
+      const couponText = couponValue ? " using a " + formatMoney(couponValue) + " coupon" : "";
+      finishSharedEvent(target, player.name + " bought " + chosen.title + " for " + formatMoney(cost) + couponText + ".", modal.playerIndex);
+    }
+
+    async function commitGameMutation(mutator, options = {}) {
+      if (session.writeInProgress) {
+        return false;
+      }
+      if (isLocalMode()) {
+        mutator(state);
+        render();
+        return true;
+      }
+      if (!firebaseApi || !session.roomRef) {
+        return false;
+      }
+      session.writeInProgress = true;
+      render();
+      try {
+        const result = await firebaseApi.runTransaction(session.roomRef, (rawRoom) => {
+          if (!rawRoom) {
+            return;
+          }
+          const draft = normalizeRoomData(rawRoom);
+          if (!options.allowWhenLocked && draft.roomLocked && !options.requireTeacher) {
+            return;
+          }
+          if (!options.allowWhenResolving && draft.resolvingAction) {
+            return;
+          }
+          if (options.requireTeacher && session.role !== "teacher") {
+            return;
+          }
+          if (options.requireCurrentResolver) {
+            const active = currentPlayer(draft);
+            const studentTurn = Boolean(session.role === "student" && active && active.id === session.playerId);
+            if (!(session.role === "teacher" || studentTurn)) {
+              return;
+            }
+          }
+          draft.resolvingAction = true;
+          mutator(draft);
+          draft.updatedAt = Date.now();
+          draft.resolvingAction = false;
+          return serializeRoomState(draft);
+        });
+        if (!result.committed) {
+          setFirebaseStatus("That action could not be written. The room may have changed or you may not have permission for it.", "warning");
+          return false;
+        }
+        return true;
+      } catch (error) {
+        setFirebaseStatus(error.message || "Firebase write failed.", "error");
+        return false;
+      } finally {
+        session.writeInProgress = false;
+        render();
+      }
+    }
+
+    async function createRoom() {
+      session.authBusy = true;
+      render();
+      try {
+        const api = await loadFirebaseSdk();
+        let roomCode = "";
+        for (let attempt = 0; attempt < 6; attempt += 1) {
+          const candidate = generateRoomCode();
+          const candidateRef = api.ref(api.database, "scoutMonopolyRooms/" + candidate);
+          const snapshot = await api.get(candidateRef);
+          if (!snapshot.exists()) {
+            roomCode = candidate;
+            session.roomRef = candidateRef;
+            break;
+          }
+        }
+        if (!roomCode) {
+          throw new Error("Could not find an open room code. Try again.");
+        }
+        const teacherName = sanitizeName(refs.teacherNameInput.value, "Teacher");
+        const teacherPin = sanitizeName(refs.teacherPinInput.value, generateTeacherPin());
+        const roomState = normalizeRoomData({
+          roomCode,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          teacherPin,
+          teacherName,
+          gradeKey: refs.gradeSelect.value || "3rd Grade",
+          statusMessage: roomCode + " is ready. Students can join now.",
+          players: {},
+          playerOrder: [],
+          decks: createDecks(),
+          currentPlayerIndex: 0,
+          pendingEvents: [],
+          turnHistory: {},
+          historyCounter: 0,
+          reflectionQuestion: REFLECTION_QUESTIONS[0],
+          inspectedTileId: 0,
+          gameStarted: false,
+          gameOver: false,
+          roomLocked: false,
+          teacherMode: true,
+          classroomMode: false,
+          debugZones: false,
+          resolvingAction: false
+        });
+        await api.set(session.roomRef, serializeRoomState(roomState));
+        session.mode = "remote";
+        session.role = "teacher";
+        session.roomCode = roomCode;
+        session.playerId = "";
+        session.teacherName = teacherName;
+        session.teacherPin = teacherPin;
+        session.connectionLabel = "Connecting";
+        saveStoredSession();
+        await listenToRoom(roomCode);
+      } catch (error) {
+        setFirebaseStatus(error.message || "Could not create the teacher room.", "error");
+      } finally {
+        session.authBusy = false;
+        render();
+      }
+    }
+
+    async function joinRoom(options = {}) {
+      session.authBusy = true;
+      render();
+      try {
+        const api = await loadFirebaseSdk();
+        const roomCode = sanitizeRoomCode(options.roomCode || refs.joinRoomCodeInput.value);
+        if (!roomCode) {
+          throw new Error("Enter a room code first.");
+        }
+        const roomRef = api.ref(api.database, "scoutMonopolyRooms/" + roomCode);
+        const snapshot = await api.get(roomRef);
+        if (!snapshot.exists()) {
+          throw new Error("That room code was not found.");
+        }
+        const currentRoom = normalizeRoomData(snapshot.val());
+        let finalRole = options.role === "teacher" ? "teacher" : "student";
+        let finalPlayerId = options.playerId || "";
+        if (options.role === "teacher") {
+          session.roomRef = roomRef;
+          session.mode = "remote";
+          session.role = "teacher";
+          session.roomCode = roomCode;
+          session.playerId = "";
+          session.teacherName = options.teacherName || currentRoom.teacherName;
+          session.teacherPin = options.teacherPin || currentRoom.teacherPin;
+          session.connectionLabel = "Connecting";
+          saveStoredSession();
+          await listenToRoom(roomCode);
+          return;
+        }
+
+        const existingIndex = currentRoom.players.findIndex((player) => player.id === finalPlayerId);
+        if (existingIndex >= 0) {
+          finalRole = "student";
+        } else if (currentRoom.roomLocked || currentRoom.gameStarted || currentRoom.players.length >= 8) {
+          finalRole = "viewer";
+        }
+
+        if (finalRole === "student" && existingIndex < 0) {
+          finalPlayerId = generateId("player");
+          await api.runTransaction(roomRef, (rawRoom) => {
+            if (!rawRoom) {
+              return;
+            }
+            const draft = normalizeRoomData(rawRoom);
+            if (draft.roomLocked || draft.gameStarted || draft.players.length >= 8) {
+              return rawRoom;
+            }
+            draft.players.push(makePlayer({
+              id: finalPlayerId,
+              joinOrder: draft.players.length,
+              name: sanitizeName(options.playerName || refs.joinPlayerNameInput.value, "Scout " + (draft.players.length + 1)),
+              color: pickAvailableColor(draft.players, options.color || refs.joinPlayerColorInput.value),
+              isConnected: true,
+              lastSeen: Date.now()
+            }, draft.gradeKey));
+            setStatus(draft, draft.players[draft.players.length - 1].name + " joined room " + draft.roomCode + ".", { type: "join" });
+            return serializeRoomState(draft);
+          });
+          const latestSnapshot = await api.get(roomRef);
+          if (!latestSnapshot.exists()) {
+            throw new Error("The room disappeared before you could finish joining.");
+          }
+          const latestRoom = normalizeRoomData(latestSnapshot.val());
+          if (!latestRoom.players.some((player) => player.id === finalPlayerId)) {
+            finalRole = "viewer";
+            finalPlayerId = "";
+          }
+        }
+
+        session.roomRef = roomRef;
+        session.mode = "remote";
+        session.role = finalRole;
+        session.roomCode = roomCode;
+        session.playerId = finalRole === "student" ? finalPlayerId : "";
+        session.connectionLabel = "Connecting";
+        saveStoredSession();
+        await listenToRoom(roomCode);
+        if (finalRole === "student") {
+          await updatePlayer(session.playerId, { isConnected: true, lastSeen: Date.now() });
+          startPresenceHeartbeat();
+        }
+      } catch (error) {
+        setFirebaseStatus(error.message || "Could not join that room.", "error");
+      } finally {
+        session.authBusy = false;
+        render();
+      }
+    }
+
+    async function listenToRoom(roomCode) {
+      const api = await loadFirebaseSdk();
+      if (session.roomUnsubscribe) {
+        session.roomUnsubscribe();
+      }
+      session.roomRef = api.ref(api.database, "scoutMonopolyRooms/" + roomCode);
+      session.roomUnsubscribe = api.onValue(session.roomRef, (snapshot) => {
+        if (!snapshot.exists()) {
+          setFirebaseStatus("This room no longer exists. You can create a new room or return to Local Practice Mode.", "warning");
+          leaveRoom(true);
+          return;
+        }
+        applySnapshot(normalizeRoomData(snapshot.val()));
+        session.mode = "remote";
+        session.roomCode = roomCode;
+        session.connectionLabel = "Connected";
+        render();
+      });
+      render();
+    }
+
+    function stopPresenceHeartbeat() {
+      if (session.presenceTimer) {
+        window.clearInterval(session.presenceTimer);
+        session.presenceTimer = null;
+      }
+    }
+
+    async function startPresenceHeartbeat() {
+      stopPresenceHeartbeat();
+      if (!isRemoteMode() || !isStudent() || !session.playerId || !firebaseApi) {
+        return;
+      }
+      await updatePlayer(session.playerId, { isConnected: true, lastSeen: Date.now() });
+      try {
+        const playerRef = firebaseApi.ref(firebaseApi.database, "scoutMonopolyRooms/" + session.roomCode + "/players/" + session.playerId);
+        const disconnectRef = firebaseApi.onDisconnect(playerRef);
+        disconnectRef.update({ isConnected: false, lastSeen: Date.now() });
+      } catch (error) {
+        // Keep the classroom flow going even if onDisconnect is unavailable.
+      }
+      session.presenceTimer = window.setInterval(() => {
+        updatePlayer(session.playerId, { isConnected: true, lastSeen: Date.now() }).catch(() => {});
+      }, 20000);
+    }
+
+    async function leaveRoom(silent = false) {
+      if (isRemoteMode() && isStudent() && session.playerId) {
+        try {
+          await updatePlayer(session.playerId, { isConnected: false, lastSeen: Date.now() });
+        } catch (error) {
+          // best effort
+        }
+      }
+      if (session.roomUnsubscribe) {
+        session.roomUnsubscribe();
+      }
+      session.roomUnsubscribe = null;
+      stopPresenceHeartbeat();
+      session.mode = "gate";
+      session.role = "teacher";
+      session.roomCode = "";
+      session.playerId = "";
+      session.teacherPin = "";
+      session.teacherName = "";
+      session.connectionLabel = "Offline";
+      session.roomRef = null;
+      localModal = null;
+      clearStoredSession();
+      if (!silent) {
+        setFirebaseStatus("You left the room. You can create a new room, join another one, or use Local Practice Mode.", "info");
+      }
+      buildLocalPracticeState();
+      render();
+    }
+
+    function showLeaderModal() {
+      const leaderIndex = state.winnerIndex != null ? state.winnerIndex : getLeadingPlayerIndex();
+      if (leaderIndex == null) {
+        return;
+      }
+      const player = state.players[leaderIndex];
+      setLocalModal({
+        isOpen: true,
+        deckKey: "winner",
+        closable: true,
+        title: state.winnerIndex != null ? player.name + " reached the savings goal!" : player.name + " is leading right now",
+        meta: [formatMoney(player.savings) + " saved", "Goal " + formatMoney(getGoal())],
+        prompt: "This screen highlights the current leader even if the class is still playing.",
+        bodyHtml: `
+          <div class="winner-glow">
+            <p><strong>${player.name}</strong> currently has ${formatMoney(player.wallet)} in wallet money and ${formatMoney(player.savings)} in savings.</p>
+            <p>Giving Badges: ${player.givingBadges} | Service Badges: ${player.serviceBadges} | Smart Saver Badges: ${player.smartSaverBadges}</p>
+          </div>
+        `,
+        actions: [
+          { key: "close-leader", label: "Close Screen", variant: "button-primary" }
+        ]
+      });
+    }
+
+    function openHelpModal() {
+      setLocalModal({
+        isOpen: true,
+        deckKey: "help",
+        closable: true,
+        title: "What do I do on my turn?",
+        meta: ["Wallet = spending money", "Savings = winning money"],
+        prompt: "Follow these five steps every turn.",
+        bodyHtml: `
+          <div class="note-card">
+            <strong>Turn Steps</strong>
+            1. Roll.<br>
+            2. Move.<br>
+            3. Draw the card for your space.<br>
+            4. Make your choice.<br>
+            5. End your turn.
+          </div>
+        `,
+        actions: [
+          { key: "close-help", label: "Close Help", variant: "button-primary" }
+        ]
+      });
+    }
+
+    async function startLocalPractice() {
+      session.mode = "local";
+      session.role = "teacher";
+      session.roomCode = "";
+      session.playerId = "";
+      session.teacherName = "Local Practice";
+      session.teacherPin = "";
+      session.connectionLabel = "Local Practice";
+      clearStoredSession();
+      buildLocalPracticeState();
+      render();
+    }
+
+    async function startNewGameAction() {
+      updateSetupFromInputs();
+      if (isLocalMode()) {
+        await commitGameMutation((target) => {
+          const players = setupState.players.slice(0, setupState.count).map((player, index) => makePlayer({
+            id: "local-player-" + (index + 1),
+            joinOrder: index,
+            name: player.name,
+            color: player.color,
+            isConnected: true
+          }, setupState.gradeKey));
+          resetGameWithPlayers(target, players, setupState.gradeKey);
+          target.roomCode = "";
+          target.teacherName = "Local Practice";
+          target.teacherPin = "";
+        });
+        setActiveTab("board");
+        return;
+      }
+      await commitGameMutation((target) => {
+        const roster = target.players.slice(0, 8);
+        if (!roster.length) {
+          return;
+        }
+        const gradeKey = refs.gradeSelect.value || target.gradeKey;
+        const players = roster.map((player, index) => makePlayer({
+          id: player.id,
+          joinOrder: player.joinOrder || index,
+          name: player.name,
+          color: player.color,
+          isConnected: player.isConnected,
+          lastSeen: player.lastSeen
+        }, gradeKey));
+        resetGameWithPlayers(target, players, gradeKey);
+        target.teacherMode = true;
+      }, { requireTeacher: true, allowWhenLocked: true });
+      setActiveTab("board");
+    }
+
+    async function restartCurrentGameAction() {
+      if (isLocalMode()) {
+        await startNewGameAction();
+        return;
+      }
+      await commitGameMutation((target) => {
+        const players = buildSharedPlayersForRestart(target);
+        if (!players.length) {
+          return;
+        }
+        resetGameWithPlayers(target, players, target.gradeKey);
+      }, { requireTeacher: true, allowWhenLocked: true });
+    }
+
+    async function rollDiceAction() {
+      await commitGameMutation((target) => {
+        const player = currentPlayer(target);
+        if (!player) {
+          return;
+        }
+        const roll = Math.floor(Math.random() * 6) + 1;
+        const fromTile = player.tile;
+        player.tile = (player.tile + roll) % TILES.length;
+        target.diceResult = roll;
+        target.inspectedTileId = player.tile;
+        target.pendingEvents = [];
+        queueLandingEvents(target, target.currentPlayerIndex, fromTile, roll);
+        setStatus(target, player.name + " rolled a " + roll + " and moved to " + TILES[player.tile].name + ".");
+        runQueuedEvents(target, "awaiting_end_turn");
+      }, { requireCurrentResolver: true });
+    }
+
+    async function endTurnAction() {
+      await commitGameMutation((target) => {
+        const player = currentPlayer(target);
+        if (!player) {
+          return;
+        }
+        player.turnsTaken += 1;
+        target.currentPlayerIndex = (target.currentPlayerIndex + 1) % target.players.length;
+        beginTurn(target);
+      }, { requireCurrentResolver: true });
+    }
+
+    async function resolveSharedModalAction(actionKey) {
+      const modal = state.activeModal;
+      if (!modal) {
+        return;
+      }
+      if (actionKey === "bank-fill-all") {
+        const input = document.getElementById("bankDepositInput");
+        const player = state.players[modal.playerIndex];
+        if (input && player) {
+          input.value = String(player.wallet);
+        }
+        return;
+      }
+      const extra = {};
+      if (actionKey === "bank-deposit") {
+        const input = document.getElementById("bankDepositInput");
+        extra.bankAmount = input ? input.value : 0;
+      }
+      await commitGameMutation((target) => {
+        applySharedModalAction(target, actionKey, extra);
+      }, { requireCurrentResolver: true, allowWhenLocked: true });
+    }
+
+    async function resolveBuyChoice(choiceIndex, useFreeFunCard) {
+      await commitGameMutation((target) => {
+        applyBuyChoice(target, choiceIndex, useFreeFunCard);
+      }, { requireCurrentResolver: true });
+    }
+
+    async function toggleTeacherMode() {
+      const nextValue = refs.teacherModeToggle.checked;
+      if (isLocalMode()) {
+        state.teacherMode = nextValue;
+        setStatus(state, nextValue ? "Teacher Mode turned on." : "Teacher Mode turned off.");
+        render();
+        return;
+      }
+      await commitGameMutation((target) => {
+        target.teacherMode = nextValue;
+        setStatus(target, nextValue ? "Teacher Mode turned on." : "Teacher Mode turned off.");
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+    }
+
+    async function toggleClassroomMode() {
+      const nextValue = refs.classroomModeToggle.checked;
+      if (isLocalMode()) {
+        state.classroomMode = nextValue;
+        if (state.classroomMode) {
+          state.activeTab = "board";
+        }
+        setStatus(state, nextValue ? "Classroom Mode turned on for smartboard play." : "Classroom Mode turned off.");
+        render();
+        return;
+      }
+      await commitGameMutation((target) => {
+        target.classroomMode = nextValue;
+        if (target.classroomMode) {
+          target.inspectedTileId = currentPlayer(target)?.tile || 0;
+        }
+        setStatus(target, nextValue ? "Classroom Mode turned on for smartboard play." : "Classroom Mode turned off.");
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+      if (nextValue) {
+        setActiveTab("board");
+      }
+    }
+
+    async function clearHistoryAction() {
+      await commitGameMutation((target) => {
+        target.history = [];
+        target.historyCounter = 0;
+        target.statusMessage = "Turn history was cleared.";
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+    }
+
+    async function resetAllPlayersAction() {
+      await commitGameMutation((target) => {
+        const players = target.players.map((player, index) => makePlayer({
+          id: player.id,
+          joinOrder: player.joinOrder || index,
+          name: player.name,
+          color: player.color,
+          isConnected: player.isConnected,
+          lastSeen: player.lastSeen
+        }, target.gradeKey));
+        resetGameWithPlayers(target, players, target.gradeKey);
+      }, { requireTeacher: true, allowWhenLocked: true });
+    }
+
+    async function endGameEarlyAction() {
+      await commitGameMutation((target) => {
+        target.gameEndedEarly = true;
+        target.gameOver = true;
+        target.winnerIndex = null;
+        target.phase = "game_over";
+        target.phaseAfterQueue = null;
+        target.pendingEvents = [];
+        clearSharedModal(target);
+        setStatus(target, "The game ended early.");
+      }, { requireTeacher: true, allowWhenLocked: true });
+      setActiveTab("start-end");
+    }
+
+    async function declareWinnerManuallyAction() {
+      const winnerIndex = Number.parseInt(refs.manualWinnerSelect.value, 10);
+      if (!Number.isFinite(winnerIndex)) {
+        return;
+      }
+      await commitGameMutation((target) => {
+        target.gameEndedEarly = false;
+        target.winnerIndex = winnerIndex;
+        target.gameOver = true;
+        target.phase = "game_over";
+        target.phaseAfterQueue = null;
+        target.pendingEvents = [];
+        setStatus(target, target.players[winnerIndex].name + " was declared the winner by the teacher.");
+        openWinnerModal(target, winnerIndex);
+      }, { requireTeacher: true, allowWhenLocked: true });
+      setActiveTab("start-end");
+    }
+
+    async function updateReflectionQuestion() {
+      const question = REFLECTION_QUESTIONS[Math.floor(Math.random() * REFLECTION_QUESTIONS.length)];
+      if (isLocalMode()) {
+        state.reflectionQuestion = question;
+        render();
+        return;
+      }
+      await commitGameMutation((target) => {
+        target.reflectionQuestion = question;
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+    }
+
+    async function applyTeacherWalletAction() {
+      const playerIndex = Number.parseInt(refs.teacherPlayerSelect.value, 10);
+      const nextWallet = Math.max(0, Number.parseInt(refs.teacherWalletInput.value, 10) || 0);
+      await commitGameMutation((target) => {
+        if (!target.players[playerIndex]) {
+          return;
+        }
+        target.players[playerIndex].wallet = nextWallet;
+        setStatus(target, "Teacher updated " + target.players[playerIndex].name + "'s wallet.");
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+    }
+
+    async function applyTeacherSavingsAction() {
+      const playerIndex = Number.parseInt(refs.teacherPlayerSelect.value, 10);
+      const nextSavings = Math.max(0, Number.parseInt(refs.teacherSavingsInput.value, 10) || 0);
+      await commitGameMutation((target) => {
+        if (!target.players[playerIndex]) {
+          return;
+        }
+        target.players[playerIndex].savings = nextSavings;
+        setStatus(target, "Teacher updated " + target.players[playerIndex].name + "'s savings.");
+        checkForWinner(target, playerIndex);
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+    }
+
+    async function moveTeacherPlayerAction() {
+      const playerIndex = Number.parseInt(refs.teacherPlayerSelect.value, 10);
+      const tileId = Number.parseInt(refs.teacherTileSelect.value, 10) || 0;
+      await commitGameMutation((target) => {
+        if (!target.players[playerIndex]) {
+          return;
+        }
+        target.players[playerIndex].tile = tileId;
+        target.inspectedTileId = tileId;
+        setStatus(target, "Teacher moved " + target.players[playerIndex].name + " to tile " + tileId + ".");
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+    }
+
+    async function drawTeacherDeckAction() {
+      const playerIndex = Number.parseInt(refs.teacherPlayerSelect.value, 10);
+      const deckKey = refs.teacherDeckSelect.value;
+      await commitGameMutation((target) => {
+        if (!target.players[playerIndex]) {
+          return;
+        }
+        const originalPhase = target.phase;
+        target.pendingEvents = [{ deckKey, playerIndex, source: "Teacher draw" }];
+        runQueuedEvents(target, originalPhase);
+      }, { requireTeacher: true, allowWhenLocked: true });
+    }
+
+    async function resetTeacherPlayerAction() {
+      const playerIndex = Number.parseInt(refs.teacherPlayerSelect.value, 10);
+      await commitGameMutation((target) => {
+        const player = target.players[playerIndex];
+        if (!player) {
+          return;
+        }
+        target.players[playerIndex] = makePlayer({
+          id: player.id,
+          joinOrder: player.joinOrder || playerIndex,
+          name: player.name,
+          color: player.color,
+          isConnected: player.isConnected,
+          lastSeen: player.lastSeen
+        }, target.gradeKey);
+        setStatus(target, "Teacher reset " + target.players[playerIndex].name + ".");
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+    }
+
+    async function addTeacherBadgeAction(field) {
+      const playerIndex = Number.parseInt(refs.teacherPlayerSelect.value, 10);
+      await commitGameMutation((target) => {
+        if (!target.players[playerIndex]) {
+          return;
+        }
+        target.players[playerIndex][field] += 1;
+        setStatus(target, "Teacher updated " + target.players[playerIndex].name + ".");
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+    }
+
+    async function handlePlayerQuickEdit(event) {
+      const button = event.target.closest("[data-quick-edit]");
+      if (!button || !state.teacherMode || !canUseTeacherTools()) {
+        return;
+      }
+      const playerIndex = Number.parseInt(button.dataset.playerIndex, 10);
+      const action = button.dataset.quickEdit;
+      await commitGameMutation((target) => {
+        const player = target.players[playerIndex];
+        if (!player) {
+          return;
+        }
+        if (action === "wallet10") adjustWallet(target, playerIndex, 10);
+        if (action === "wallet50") adjustWallet(target, playerIndex, 50);
+        if (action === "savings50") adjustSavings(target, playerIndex, 50);
+        if (action === "giving") player.givingBadges += 1;
+        if (action === "service") player.serviceBadges += 1;
+        setStatus(target, "Teacher quick edit updated " + player.name + ".");
+        checkForWinner(target, playerIndex);
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+    }
+
+    async function shuffleDeckByKeyAction(deckKey) {
+      await commitGameMutation((target) => {
+        const deck = target.decks[deckKey];
+        deck.drawPile = shuffle(deck.drawPile.concat(deck.discardPile).map((card) => ({ ...card })));
+        deck.discardPile = [];
+        setStatus(target, DECK_TITLES[deckKey] + " deck was shuffled.");
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+    }
+
+    async function resetAllDecksAction() {
+      await commitGameMutation((target) => {
+        target.decks = createDecks();
+        setStatus(target, "All decks were reset and shuffled.");
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+    }
+
+    async function drawDeckForSelectedPlayerAction(deckKey) {
+      const playerIndex = Number.parseInt(refs.deckTargetSelect.value, 10);
+      await commitGameMutation((target) => {
+        const safeIndex = Number.isFinite(playerIndex) ? playerIndex : target.currentPlayerIndex;
+        if (!target.players[safeIndex]) {
+          return;
+        }
+        const originalPhase = target.phase;
+        target.pendingEvents = [{ deckKey, playerIndex: safeIndex, source: "Deck tab draw" }];
+        runQueuedEvents(target, originalPhase);
+      }, { requireTeacher: true, allowWhenLocked: true });
+      setActiveTab("decks");
+    }
+
+    async function setDebugZonesAction() {
+      const nextValue = refs.debugToggle.checked;
+      if (isLocalMode()) {
+        state.debugZones = nextValue;
+        render();
+        return;
+      }
+      await commitGameMutation((target) => {
+        target.debugZones = nextValue;
+      }, { requireTeacher: true, allowWhenLocked: true, allowWhenResolving: true });
+    }
+
+    async function lockRoomAction() {
+      await commitGameMutation((target) => {
+        target.roomLocked = true;
+        target.gameOver = true;
+        target.phase = "game_over";
+        target.phaseAfterQueue = null;
+        target.pendingEvents = [];
+        clearSharedModal(target);
+        setStatus(target, "The teacher ended the game and locked the room.");
+      }, { requireTeacher: true, allowWhenLocked: true });
+    }
+
+    function render() {
+      refs.roomGate.classList.toggle("is-hidden", session.mode !== "gate");
+      refs.createTeacherRoomBtn.disabled = session.authBusy;
+      refs.joinGameRoomBtn.disabled = session.authBusy;
+      refs.startLocalPracticeBtn.disabled = session.authBusy;
+      renderRoomBanner();
+      renderTabs();
+      renderSetupRows();
+      renderBoardZones();
+      renderTokens();
+      renderSummary();
+      renderCurrentPlayerCard();
+      renderPlayerList();
+      renderTeacherPanel();
+      renderDecks();
+      renderHistory();
+      renderReflection();
+      renderEndGameSummary();
+      renderModal();
+    }
+
+    function bindEvents() {
+      refs.tabButtons.forEach((button) => {
+        button.addEventListener("click", () => setActiveTab(button.dataset.tab));
+      });
+      document.querySelectorAll("[data-tab-open]").forEach((button) => {
+        button.addEventListener("click", () => setActiveTab(button.dataset.tabOpen));
+      });
+
+      refs.createTeacherRoomBtn.addEventListener("click", createRoom);
+      refs.joinGameRoomBtn.addEventListener("click", () => joinRoom({
+        roomCode: refs.joinRoomCodeInput.value,
+        playerName: refs.joinPlayerNameInput.value,
+        color: refs.joinPlayerColorInput.value
+      }));
+      refs.startLocalPracticeBtn.addEventListener("click", startLocalPractice);
+      refs.copyStudentLinkBtn.addEventListener("click", async () => {
+        try {
+          await copyToClipboard(buildShareLink(state.roomCode || session.roomCode));
+          setFirebaseStatus("Student link copied to the clipboard.", "info");
+        } catch (error) {
+          setFirebaseStatus(error.message || "Could not copy the student link.", "warning");
+        }
+      });
+      refs.copyRoomCodeBtn.addEventListener("click", async () => {
+        try {
+          await copyToClipboard(state.roomCode || session.roomCode || "");
+          setFirebaseStatus("Room code copied to the clipboard.", "info");
+        } catch (error) {
+          setFirebaseStatus(error.message || "Could not copy the room code.", "warning");
+        }
+      });
+      refs.leaveRoomBtn.addEventListener("click", () => {
+        if (isRemoteMode()) {
+          leaveRoom();
+        } else {
+          session.mode = "gate";
+          render();
+        }
+      });
+
+      refs.newGameBtn.addEventListener("click", startNewGameAction);
+      refs.startEndNewGameBtn.addEventListener("click", startNewGameAction);
+      refs.restartCurrentGameBtn.addEventListener("click", restartCurrentGameAction);
+      refs.rollDiceBtn.addEventListener("click", rollDiceAction);
+      refs.endTurnBtn.addEventListener("click", endTurnAction);
+      refs.printBoardBtn.addEventListener("click", () => window.print());
+      refs.helpBtn.addEventListener("click", openHelpModal);
+      refs.boardHelpBtn.addEventListener("click", openHelpModal);
+      refs.teacherModeToggle.addEventListener("change", toggleTeacherMode);
+      refs.classroomModeToggle.addEventListener("change", toggleClassroomMode);
+      refs.gradeSelect.addEventListener("change", () => {
+        updateSetupFromInputs();
+        render();
+      });
+      refs.playerCountInput.addEventListener("change", () => {
+        updateSetupFromInputs();
+        renderSetupRows();
+      });
+      refs.setupRows.addEventListener("input", () => {
+        updateSetupFromInputs();
+      });
+      refs.playerList.addEventListener("click", handlePlayerQuickEdit);
+      refs.deckList.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-deck-action]");
+        if (!button) {
+          return;
+        }
+        const deckKey = button.dataset.deckKey;
+        const action = button.dataset.deckAction;
+        if (action === "shuffle") {
+          shuffleDeckByKeyAction(deckKey);
+          return;
+        }
+        drawDeckForSelectedPlayerAction(deckKey);
+      });
+      refs.resetAllDecksBtn.addEventListener("click", resetAllDecksAction);
+      refs.debugToggle.addEventListener("change", setDebugZonesAction);
+      refs.teacherPlayerSelect.addEventListener("change", () => {
+        state.teacherPlayerIndex = Number.parseInt(refs.teacherPlayerSelect.value, 10) || 0;
+        render();
+      });
+      document.getElementById("applyWalletBtn").addEventListener("click", applyTeacherWalletAction);
+      document.getElementById("applySavingsBtn").addEventListener("click", applyTeacherSavingsAction);
+      document.getElementById("movePlayerBtn").addEventListener("click", moveTeacherPlayerAction);
+      document.getElementById("drawDeckBtn").addEventListener("click", drawTeacherDeckAction);
+      document.getElementById("resetPlayerBtn").addEventListener("click", resetTeacherPlayerAction);
+      document.getElementById("resetGameBtn").addEventListener("click", startNewGameAction);
+      document.getElementById("addGivingBadgeBtn").addEventListener("click", () => addTeacherBadgeAction("givingBadges"));
+      document.getElementById("addServiceBadgeBtn").addEventListener("click", () => addTeacherBadgeAction("serviceBadges"));
+      refs.lockRoomBtn.addEventListener("click", lockRoomAction);
+      refs.deleteRoomBtn.addEventListener("click", deleteRoom);
+      refs.clearHistoryBtn.addEventListener("click", clearHistoryAction);
+      refs.randomReflectionBtn.addEventListener("click", updateReflectionQuestion);
+      refs.endGameEarlyBtn.addEventListener("click", endGameEarlyAction);
+      refs.showWinnerScreenBtn.addEventListener("click", showLeaderModal);
+      refs.declareWinnerBtn.addEventListener("click", declareWinnerManuallyAction);
+      refs.resetAllPlayersBtn.addEventListener("click", resetAllPlayersAction);
+    }
+
+    async function restoreSessionFromUrlOrStorage() {
+      const stored = loadStoredSession();
+      const roomFromUrl = sanitizeRoomCode(new URLSearchParams(window.location.search).get("room"));
+      if (roomFromUrl) {
+        refs.joinRoomCodeInput.value = roomFromUrl;
+      }
+      if (roomFromUrl && stored && stored.roomCode === roomFromUrl) {
+        try {
+          await joinRoom({
+            role: stored.role,
+            roomCode: stored.roomCode,
+            playerId: stored.playerId,
+            teacherName: stored.teacherName,
+            teacherPin: stored.teacherPin
+          });
+          return;
+        } catch (error) {
+          clearStoredSession();
+        }
+      }
+      if (!roomFromUrl && stored && stored.mode === "remote" && stored.roomCode) {
+        try {
+          await joinRoom({
+            role: stored.role,
+            roomCode: stored.roomCode,
+            playerId: stored.playerId,
+            teacherName: stored.teacherName,
+            teacherPin: stored.teacherPin
+          });
+          return;
+        } catch (error) {
+          clearStoredSession();
+        }
+      }
+      if (!hasFirebaseConfig()) {
+        setFirebaseStatus("Firebase config is missing, so shared rooms are disabled until you paste your project values into the placeholder config. Local Practice Mode is still fully available.", "warning");
+      }
+    }
+
+    // Test hooks for the web-game workflow
+    window.render_game_to_text = () => JSON.stringify({
+      coordinateSystem: "Tiles are numbered clockwise from the top-left Start tile.",
+      mode: session.mode,
+      role: session.role,
+      roomCode: state.roomCode || session.roomCode || null,
+      teacherMode: state.teacherMode,
+      classroomMode: state.classroomMode,
+      gameStarted: state.gameStarted,
+      gameOver: state.gameOver,
+      roomLocked: state.roomLocked,
+      phase: state.phase,
+      grade: state.gradeKey,
+      goal: getGoal(),
+      currentPlayer: currentPlayer() ? {
+        id: currentPlayer().id,
+        name: currentPlayer().name,
+        tile: currentPlayer().tile,
+        wallet: currentPlayer().wallet,
+        savings: currentPlayer().savings
+      } : null,
+      diceResult: state.diceResult,
+      winner: state.winnerIndex == null ? null : state.players[state.winnerIndex].name,
+      activeModal: state.activeModal ? {
+        deckKey: state.activeModal.deckKey,
+        modalType: state.activeModal.modalType,
+        title: state.activeModal.title,
+        playerIndex: state.activeModal.playerIndex
+      } : null,
+      historyCount: state.history.length,
+      connectionLabel: session.connectionLabel,
+      firebaseConfigured: hasFirebaseConfig(),
+      players: state.players.map((player) => ({
+        id: player.id,
+        name: player.name,
+        tile: player.tile,
+        wallet: player.wallet,
+        savings: player.savings,
+        givingBadges: player.givingBadges,
+        serviceBadges: player.serviceBadges,
+        freeFunCards: player.freeFunCards,
+        smartSaverBadges: player.smartSaverBadges,
+        skippedWant: player.skippedWant,
+        nextBuyDiscount: player.nextBuyDiscount,
+        isConnected: player.isConnected
+      }))
+    });
+
+    window.advanceTime = () => {
+      render();
+    };
+
+    ensureSetupPlayers();
+    refs.gradeSelect.value = setupState.gradeKey;
+    buildLocalPracticeState();
+    buildBoardZones();
+    bindEvents();
+    restoreSessionFromUrlOrStorage().finally(render);
+  </script>
+</body>
+</html>
